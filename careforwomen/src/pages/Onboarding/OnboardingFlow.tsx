@@ -87,6 +87,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete }) =>
         maxWidth: '460px',
         margin: '0 auto',
         width: '100%',
+        backgroundColor: '#fbf8f3',
+        color: '#342134',
       }}
     >
       {/* Top Header */}
