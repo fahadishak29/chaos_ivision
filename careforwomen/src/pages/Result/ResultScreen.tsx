@@ -1,27 +1,43 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Scan, Share2, AlertTriangle, ShoppingBag, Plus, Minus, Check } from 'lucide-react';
-import { Button } from '../../components/ui/Button/Button';
-import { GlassCard } from '../../components/ui/Card/GlassCard';
-import { VerdictBadge } from '../../components/ui/VerdictBadge/VerdictBadge';
-import { AllergenAlert } from '../../components/result/AllergenAlert';
-import { NutrientBreakdown } from '../../components/result/NutrientBreakdown';
-import { AvoidList } from '../../components/result/AvoidList';
-import { Explanation } from '../../components/result/Explanation';
-import { Alternatives } from '../../components/result/Alternatives';
-import { AlternativesExplorer } from '../../components/alternatives/AlternativesExplorer';
-import { ProductComparisonModal } from '../../components/alternatives/ProductComparisonModal';
-import { AlternativeDetailModal } from '../../components/alternatives/AlternativeDetailModal';
-import { ScanRecord } from '../../types/scan';
-import { SmartAlternative, ProductComparisonData } from '../../types/alternatives';
+import React, { useEffect, useState } from 'react';
+import {
+  ArrowLeft,
+  Download,
+  Check,
+  AlertTriangle,
+  XCircle,
+  HelpCircle,
+  Info,
+  ClipboardCheck,
+  UserRound,
+  Leaf,
+  ScanLine,
+  History,
+  X,
+  ShoppingBag,
+  Plus,
+  Minus,
+} from 'lucide-react';
+import { NutriButton } from '../../components/ui/NutriButton';
+import { NutriVerdictBadge } from '../../components/ui/NutriVerdictBadge';
+import { ProductArt } from '../../components/ui/ProductArt';
 import { useProfile } from '../../context/ProfileContext';
 import { useFavourites } from '../../context/FavouritesContext';
 import { useBasket } from '../../context/BasketContext';
+import { ScanRecord } from '../../types/scan';
+import { Alternative } from '../../types/verdict';
+import { SmartAlternative, ProductComparisonData } from '../../types/alternatives';
+import { fetchVerifiedGreenAlternatives } from '../../services/alternatives';
 import { generateProductComparison } from '../../services/alternativesEngine';
+import { AlternativesExplorer } from '../../components/alternatives/AlternativesExplorer';
+import { ProductComparisonModal } from '../../components/alternatives/ProductComparisonModal';
+import { AlternativeDetailModal } from '../../components/alternatives/AlternativeDetailModal';
+import { Alternatives } from '../../components/result/Alternatives';
 
 export interface ResultScreenProps {
   record: ScanRecord;
   onScanAnother: () => void;
   onBack: () => void;
+  onHistory?: () => void;
   onOpenBasket?: () => void;
 }
 
@@ -29,10 +45,11 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   record,
   onScanAnother,
   onBack,
+  onHistory,
   onOpenBasket,
 }) => {
-  const { product, verdict, explanation } = record;
   const { profile } = useProfile();
+  const { product, verdict, explanation } = record;
   const { toggleFavourite, isFavourite } = useFavourites();
   const { addItem, updateQuantity, getItemByProductId, totalUnits } = useBasket();
 
@@ -55,18 +72,74 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     setTimeout(() => setJustAdded(false), 2500);
   };
 
-  const handleShare = async () => {
+  const [alternatives, setAlternatives] = useState<Alternative[]>(verdict.alternatives || []);
+  const [loadingAlts, setLoadingAlts] = useState(false);
+
+  // Fetch verified alternatives from Open Food Facts if not already attached
+  useEffect(() => {
+    async function loadAlternatives() {
+      if (!profile) return;
+      if (verdict.alternatives && verdict.alternatives.length > 0) {
+        setAlternatives(verdict.alternatives);
+        return;
+      }
+
+      const category = product.category || 'cereals';
+      setLoadingAlts(true);
+      try {
+        const alts = await fetchVerifiedGreenAlternatives(category, profile);
+        setAlternatives(alts);
+      } catch {
+        // Fallback
+      } finally {
+        setLoadingAlts(false);
+      }
+    }
+
+    loadAlternatives();
+  }, [product.category, profile, verdict.alternatives]);
+
+  // Compute data completeness percentage
+  const coreFields = ['energy_kcal', 'sugar_g', 'saturated_fat_g', 'sodium_mg', 'protein_g', 'carbs_g', 'fiber_g'];
+  const presentCount = coreFields.filter(
+    (field) => product.nutrients && product.nutrients[field] !== undefined
+  ).length;
+  const completeness = Math.max(20, Math.round((presentCount / coreFields.length) * 100));
+
+  // Verdict config mapping
+  const overall = verdict.overall;
+  const isGreen = overall === 'green';
+  const isYellow = overall === 'yellow';
+  const isRed = overall === 'red';
+
+  const verdictClass = isGreen
+    ? 'verdict-suitable'
+    : isYellow
+    ? 'verdict-caution'
+    : isRed
+    ? 'verdict-avoid'
+    : 'verdict-caution';
+
+  const verdictWord = isGreen
+    ? 'SUITABLE'
+    : isYellow
+    ? 'CAUTION'
+    : isRed
+    ? 'AVOID'
+    : 'INCOMPLETE';
+
+  const handleShareOrSave = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `SHE Scan Verdict: ${product.name}`,
-          text: `${product.name} scored ${verdict.overall.toUpperCase()} on SHE Scan for women's health conditions.`,
+          title: `NutriLens Verdict: ${product.name}`,
+          text: `${product.name} scored ${verdictWord} on NutriLens for your personalized health profile.`,
           url: window.location.href,
         });
-      } catch {
-        // Ignored
-      }
+        return;
+      } catch {}
     }
+    window.print();
   };
 
   const handleOpenCompare = (alt: SmartAlternative) => {
@@ -92,402 +165,415 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     );
   }
 
+  // Active profile summary string
+  const activeConditionLabels: string[] = [];
+  if (profile?.lifeStages?.includes('pcos')) activeConditionLabels.push('PCOS / PCOD');
+  if (profile?.lifeStages?.includes('pregnancy')) activeConditionLabels.push('Pregnancy');
+  if (profile?.lifeStages?.includes('breastfeeding')) activeConditionLabels.push('Breastfeeding');
+  if (profile?.diabetesType && profile.diabetesType !== 'none') {
+    activeConditionLabels.push(profile.diabetesType === 'type1' ? 'Type 1 Diabetes' : 'Type 2 Diabetes');
+  }
+  if (profile?.lactoseIntolerant) activeConditionLabels.push('Lactose sensitive');
+  if (profile?.allergies && profile.allergies.length > 0) {
+    activeConditionLabels.push(`${profile.allergies.length} active allergen alerts`);
+  }
+
+  // Format nutrition snapshot items
+  const nutrients = product.nutrients || {};
+  const nutritionItems: { label: string; value: string }[] = [];
+  if (product.servingSize) nutritionItems.push({ label: 'Serving size', value: product.servingSize });
+  if (nutrients.energy_kcal !== undefined) nutritionItems.push({ label: 'Calories', value: `${nutrients.energy_kcal} kcal` });
+  if (nutrients.sugar_g !== undefined) nutritionItems.push({ label: 'Sugars', value: `${nutrients.sugar_g} g` });
+  if (nutrients.added_sugar_g !== undefined) nutritionItems.push({ label: 'Added sugar', value: `${nutrients.added_sugar_g} g` });
+  if (nutrients.carbs_g !== undefined) nutritionItems.push({ label: 'Carbohydrates', value: `${nutrients.carbs_g} g` });
+  if (nutrients.protein_g !== undefined) nutritionItems.push({ label: 'Protein', value: `${nutrients.protein_g} g` });
+  if (nutrients.fiber_g !== undefined) nutritionItems.push({ label: 'Dietary fiber', value: `${nutrients.fiber_g} g` });
+  if (nutrients.total_fat_g !== undefined) nutritionItems.push({ label: 'Total fat', value: `${nutrients.total_fat_g} g` });
+  if (nutrients.saturated_fat_g !== undefined) nutritionItems.push({ label: 'Saturated fat', value: `${nutrients.saturated_fat_g} g` });
+  if (nutrients.sodium_mg !== undefined) nutritionItems.push({ label: 'Sodium', value: `${nutrients.sodium_mg} mg` });
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '20px 20px 48px',
-        maxWidth: '480px',
-        margin: '0 auto',
-        width: '100%',
-      }}
-    >
+    <div className="animate-in">
+      {/* Back button */}
+      <button className="back-link" onClick={onBack} type="button">
+        <ArrowLeft className="size-4" />
+        <span>Back to scan</span>
+      </button>
+
       {/* Top Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '20px',
-        }}
-      >
-        <button
-          type="button"
-          onClick={onBack}
-          aria-label="Back"
-          style={{
-            color: 'var(--text-primary)',
-            background: 'rgba(255, 255, 255, 0.08)',
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-        >
-          <ArrowLeft size={20} />
-        </button>
-
-        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-rose)', letterSpacing: '0.04em' }}>
-          SAFETY REPORT
-        </span>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div className="result-top">
+        <div>
+          <div className="eyebrow">
+            {product.source === 'manual' ? 'DEMONSTRATION ASSESSMENT' : 'PERSONALIZED ASSESSMENT'}
+          </div>
+          <h1 className="result-title">{product.name}</h1>
+          <p className="result-brand">
+            {product.brand || 'Verified Product'} {product.category ? `· ${product.category}` : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
           {onOpenBasket && (
-            <button
-              type="button"
-              onClick={onOpenBasket}
-              aria-label="View Grocery Basket"
-              style={{
-                position: 'relative',
-                color: 'var(--text-primary)',
-                background: 'rgba(255, 255, 255, 0.08)',
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <ShoppingBag size={18} />
+            <NutriButton variant="outline" size="sm" onClick={onOpenBasket} className="relative">
+              <ShoppingBag className="size-3.5" />
+              <span>Basket</span>
               {totalUnits > 0 && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-4px',
-                    right: '-4px',
-                    minWidth: '18px',
-                    height: '18px',
-                    borderRadius: '9px',
-                    background: 'var(--gradient-primary)',
-                    color: '#ffffff',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '0 4px',
-                    boxShadow: '0 2px 5px rgba(0,0,0,0.4)',
-                  }}
-                >
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-primary text-white text-[10px] font-bold">
                   {totalUnits}
                 </span>
               )}
-            </button>
+            </NutriButton>
           )}
-
-          <button
-            type="button"
-            onClick={handleShare}
-            aria-label="Share Safety Report"
-            style={{
-              color: 'var(--text-secondary)',
-              background: 'rgba(255, 255, 255, 0.08)',
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            <Share2 size={18} />
-          </button>
+          <NutriButton variant="outline" size="sm" onClick={handleShareOrSave}>
+            <Download className="size-3.5" />
+            <span>Save / Share</span>
+          </NutriButton>
         </div>
       </div>
 
-      {/* Product Summary Header Card */}
-      <GlassCard padding="md" style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px' }}>
-        {product.imageUrl ? (
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            style={{
-              width: '56px',
-              height: '56px',
-              objectFit: 'contain',
-              borderRadius: 'var(--radius-md)',
-              background: '#ffffff',
-              padding: '4px',
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: 'var(--radius-md)',
-              background: 'rgba(255, 255, 255, 0.05)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '24px',
-            }}
-          >
-            📦
+      {/* Verdict Hero Banner */}
+      <div className={`verdict-hero ${verdictClass}`}>
+        <div className="verdict-symbol">
+          {isGreen ? (
+            <Check />
+          ) : isYellow ? (
+            <AlertTriangle />
+          ) : isRed ? (
+            <XCircle />
+          ) : (
+            <HelpCircle />
+          )}
+        </div>
+
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-75">
+            Personalized verdict
           </div>
-        )}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h2
-            style={{
-              fontSize: '17px',
-              fontWeight: 800,
-              color: 'var(--text-primary)',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {product.name}
-          </h2>
-          <div className="caption" style={{ color: 'var(--text-secondary)', marginTop: '2px' }}>
-            {product.brand ? `${product.brand} • ` : ''}
-            {product.source === 'ocr' ? 'Extracted from Photo' : 'Barcode Scanned'}
+          <div className="verdict-word">{verdictWord}</div>
+          <p>{explanation || 'Evaluated against your active health profile and safety guidelines.'}</p>
+        </div>
+
+        <div className="verdict-side">
+          <div className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-60">
+            Data completeness
+          </div>
+          <div className="mt-2 flex items-center gap-2">
+            <div className="progress">
+              <span style={{ width: `${completeness}%` }} />
+            </div>
+            <span className="text-sm font-semibold">{completeness}%</span>
           </div>
         </div>
-      </GlassCard>
+      </div>
 
       {/* Smart Basket Integration Card */}
       <div
-        style={{
-          padding: '12px 14px',
-          borderRadius: 'var(--radius-md)',
-          background: isInBasket
-            ? 'rgba(52, 211, 153, 0.08)'
-            : 'rgba(255, 255, 255, 0.03)',
-          border: isInBasket
-            ? '1px solid rgba(52, 211, 153, 0.3)'
-            : '1px solid rgba(255, 255, 255, 0.08)',
-          marginBottom: '20px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-        }}
+        className={`p-4 rounded-xl border mb-6 flex flex-col gap-3 transition-colors ${
+          isInBasket ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-[#eadfd9]'
+        }`}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <ShoppingBag size={17} color={isInBasket ? 'var(--verdict-green)' : 'var(--accent-lavender)'} />
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              {isInBasket ? 'Already In Your Basket' : 'Grocery Basket'}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className={`size-4 ${isInBasket ? 'text-emerald-700' : 'text-plum/70'}`} />
+            <span className="text-xs font-bold text-plum">
+              {isInBasket ? 'Already in your grocery basket' : 'Grocery Basket'}
             </span>
           </div>
-
           {isInBasket && (
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--verdict-green)',
-                background: 'rgba(52, 211, 153, 0.15)',
-                padding: '2px 8px',
-                borderRadius: 'var(--radius-full)',
-              }}
-            >
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
               {existingBasketItem.quantity} {existingBasketItem.quantity === 1 ? 'unit' : 'units'}
             </span>
           )}
         </div>
 
         {isInBasket ? (
-          <div>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-              You scanned a product already in your basket. Adjust quantity or review basket intelligence:
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-plum/65">
+              You scanned a product already in your basket. Adjust quantity or view full basket:
             </p>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* Stepper */}
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  background: 'rgba(0, 0, 0, 0.3)',
-                  border: '1px solid rgba(255, 255, 255, 0.12)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '3px',
-                }}
-              >
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center bg-[#f7f3f0] border border-[#eadfd9] rounded-lg p-0.5">
                 <button
                   type="button"
                   aria-label="Decrease quantity"
                   onClick={() => updateQuantity(existingBasketItem.id, existingBasketItem.quantity - 1)}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
+                  className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
                 >
-                  <Minus size={14} />
+                  <Minus className="size-3.5" />
                 </button>
-                <span
-                  style={{
-                    minWidth: '32px',
-                    textAlign: 'center',
-                    fontSize: '13px',
-                    fontWeight: 700,
-                    color: 'var(--text-primary)',
-                  }}
-                >
+                <span className="w-8 text-center text-xs font-bold text-plum">
                   {existingBasketItem.quantity}
                 </span>
                 <button
                   type="button"
                   aria-label="Increase quantity"
                   onClick={() => updateQuantity(existingBasketItem.id, existingBasketItem.quantity + 1)}
-                  style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                  }}
+                  className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
                 >
-                  <Plus size={14} />
+                  <Plus className="size-3.5" />
                 </button>
               </div>
 
               {onOpenBasket && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={onOpenBasket}
-                  style={{ flex: 1, fontSize: '12.5px', padding: '7px 12px' }}
-                >
+                <NutriButton variant="outline" size="sm" onClick={onOpenBasket} className="text-xs">
                   View in Basket
-                </Button>
+                </NutriButton>
               )}
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                background: 'rgba(0, 0, 0, 0.3)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 'var(--radius-md)',
-                padding: '3px',
-              }}
-            >
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center bg-[#f7f3f0] border border-[#eadfd9] rounded-lg p-0.5">
               <button
                 type="button"
                 aria-label="Decrease quantity"
                 onClick={() => setAddQty(Math.max(1, addQty - 1))}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
+                className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
               >
-                <Minus size={14} />
+                <Minus className="size-3.5" />
               </button>
-              <span
-                style={{
-                  minWidth: '32px',
-                  textAlign: 'center',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: 'var(--text-primary)',
-                }}
-              >
+              <span className="w-8 text-center text-xs font-bold text-plum">
                 {addQty}
               </span>
               <button
                 type="button"
                 aria-label="Increase quantity"
                 onClick={() => setAddQty(addQty + 1)}
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
+                className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
               >
-                <Plus size={14} />
+                <Plus className="size-3.5" />
               </button>
             </div>
 
-            <Button
-              variant={justAdded ? 'secondary' : 'primary'}
+            <NutriButton
+              variant={justAdded ? 'outline' : 'default'}
               size="sm"
               onClick={handleAddToBasket}
-              icon={justAdded ? <Check size={15} /> : <ShoppingBag size={15} />}
-              style={{ flex: 1, fontSize: '12.5px', padding: '7px 14px' }}
+              className={justAdded ? 'border-emerald-500 text-emerald-700' : 'scan-button flex-1 justify-center'}
             >
-              {justAdded ? 'Added to Basket!' : `Add to Basket (${addQty})`}
-            </Button>
+              {justAdded ? (
+                <span className="flex items-center gap-1.5">
+                  <Check className="size-3.5 text-emerald-600" />
+                  <span>Added to basket!</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <ShoppingBag className="size-3.5" />
+                  <span>Add to basket ({addQty})</span>
+                </span>
+              )}
+            </NutriButton>
           </div>
         )}
       </div>
 
-      {/* Allergen Alert (Overrides Everything if present) */}
-      <AllergenAlert matches={verdict.allergenMatches} />
+      {/* High-priority allergen warning alert if allergens matched */}
+      {verdict.allergenMatches && verdict.allergenMatches.length > 0 && (
+        <div className="allergen-alert">
+          <AlertTriangle className="size-5 shrink-0" />
+          <div>
+            <div className="text-sm font-bold">Higher-priority allergen warning</div>
+            <p className="mt-1 text-xs leading-relaxed">
+              {verdict.allergenMatches.map((m) => `"${m.synonym}" (triggers ${m.allergen})`).join(', ')} was found in the ingredients record. Even trace amounts can pose an immediate safety risk.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Traces Caution Alert Banner */}
       {verdict.tracesWarnings && verdict.tracesWarnings.length > 0 && verdict.allergenMatches.length === 0 && (
-        <div
-          style={{
-            padding: '12px 16px',
-            borderRadius: 'var(--radius-md)',
-            background: 'rgba(251, 191, 36, 0.1)',
-            border: '1px solid rgba(251, 191, 36, 0.3)',
-            color: 'var(--verdict-yellow)',
-            fontSize: '13px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '20px',
-          }}
-        >
-          <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+        <div className="mb-6 p-3.5 rounded-xl border border-amber-300/60 bg-amber-50/70 text-amber-900 text-xs flex items-center gap-2.5">
+          <AlertTriangle className="size-4 shrink-0 text-amber-600" />
           <span>
             <strong>Traces Warning:</strong> Packaging indicates traces of allergen: {verdict.tracesWarnings.map((t) => t.allergen).join(', ')}.
           </span>
         </div>
       )}
 
-      {/* Big Animated Verdict Badge */}
-      <div style={{ marginBottom: '24px' }}>
-        <VerdictBadge verdict={verdict.overall} score={verdict.score} size="lg" />
+      {/* Main 2-Column Grid */}
+      <div className="result-grid">
+        {/* Left Column: Product Summary & Ingredients & Nutrition */}
+        <div className="result-column">
+          {/* Product details card */}
+          <div className="result-card">
+            <div className="result-card-heading">
+              <h2>Product details</h2>
+              <span className="text-[10px] uppercase tracking-[0.12em] text-plum/40">
+                {product.source === 'openfoodfacts' ? 'Open Food Facts' : product.source === 'ocr' ? 'OCR Extracted' : 'Sample Label'}
+              </span>
+            </div>
+
+            <div className="product-summary-body">
+              <ProductArt product={product} large />
+              <div className="min-w-0 flex-1">
+                <div className="text-xs text-plum/50">{product.brand || 'Food Product'}</div>
+                <div className="mt-1 font-serif text-2xl font-semibold text-plum truncate">
+                  {product.name}
+                </div>
+                <div className="mt-3">
+                  <NutriVerdictBadge verdict={verdict.overall} />
+                </div>
+              </div>
+            </div>
+
+            {/* Ingredients statement */}
+            <div className="ingredients">
+              <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-plum/50">
+                Ingredients list
+              </div>
+              <p>
+                {product.ingredients && product.ingredients.length > 0 ? (
+                  product.ingredients.map((ing, i) => {
+                    const isAllergenMatch = verdict.allergenMatches.some((m) =>
+                      ing.toLowerCase().includes(m.synonym.toLowerCase())
+                    );
+                    return (
+                      <span
+                        key={i}
+                        className={isAllergenMatch ? 'ingredient-alert font-bold' : ''}
+                      >
+                        {ing}
+                        {i < product.ingredients.length - 1 ? ', ' : ''}
+                      </span>
+                    );
+                  })
+                ) : (
+                  <span className="text-plum/50 italic">
+                    Ingredients statement was not provided on this package record.
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Nutrition snapshot card */}
+          <div className="result-card">
+            <div className="result-card-heading">
+              <h2>Nutrition snapshot</h2>
+              <Info className="size-4 text-plum/30" />
+            </div>
+
+            {nutritionItems.length > 0 ? (
+              <div className="nutrition-grid">
+                {nutritionItems.map(({ label, value }) => (
+                  <div key={label}>
+                    <div className="text-[11px] text-plum/50">{label}</div>
+                    <div className="mt-0.5 text-sm font-semibold text-plum">{value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="mt-4 text-xs text-plum/50 italic">
+                Nutrition panel data was not included in this product record.
+              </p>
+            )}
+
+            <p className="mt-4 text-[11px] text-plum/45">
+              Values normalized per 100g or package serving. Always confirm with the physical packaging label.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Why you got this result & Active Profile Context */}
+        <div className="result-column">
+          {/* Rules triggered card */}
+          <div className="result-card">
+            <div className="result-card-heading">
+              <div>
+                <h2>Why you got this result</h2>
+                <p className="mt-1 text-xs text-plum/50">Transparent deterministic rules triggered by your profile.</p>
+              </div>
+              <ClipboardCheck className="size-5 text-primary shrink-0" />
+            </div>
+
+            <div className="rules-list">
+              {/* Allergen matches */}
+              {verdict.allergenMatches.map((m, idx) => (
+                <div className="rule-row" key={`allergen-${idx}`}>
+                  <div className="rule-icon rule-danger">
+                    <X />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-plum">Confirmed allergen match: {m.allergen}</div>
+                    <p className="mt-0.5 text-xs leading-relaxed text-plum/60">
+                      Detected "{m.synonym}" via {m.foundIn}. Conflicts with your saved profile.
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {/* Standard rule results */}
+              {verdict.ruleResults.map((rule, idx) => {
+                const toneClass =
+                  rule.verdict === 'green'
+                    ? 'rule-positive'
+                    : rule.verdict === 'yellow'
+                    ? 'rule-warning'
+                    : rule.verdict === 'red'
+                    ? 'rule-danger'
+                    : 'rule-neutral';
+
+                return (
+                  <div className="rule-row" key={`rule-${idx}`}>
+                    <div className={`rule-icon ${toneClass}`}>
+                      {rule.verdict === 'green' ? (
+                        <Check />
+                      ) : rule.verdict === 'yellow' ? (
+                        <AlertTriangle />
+                      ) : rule.verdict === 'red' ? (
+                        <X />
+                      ) : (
+                        <Info />
+                      )}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-plum">{rule.nutrient} limit</div>
+                      <p className="mt-0.5 text-xs leading-relaxed text-plum/60">{rule.message}</p>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {verdict.ruleResults.length === 0 && verdict.allergenMatches.length === 0 && (
+                <div className="rule-row">
+                  <div className="rule-icon rule-positive">
+                    <Check />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-plum">Clean ingredient & nutrient baseline</div>
+                    <p className="mt-0.5 text-xs leading-relaxed text-plum/60">
+                      No allergen conflicts or sugar/fat threshold violations were triggered.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Active profile context card */}
+          <div className="result-card">
+            <div className="result-card-heading">
+              <h2>Active profile context</h2>
+              <UserRound className="size-4 text-plum/30" />
+            </div>
+
+            <p className="mt-3 text-xs leading-relaxed text-plum/60">
+              {activeConditionLabels.join(' · ') || 'General safety baseline profile'}
+            </p>
+
+            {verdict.missingNutrients && verdict.missingNutrients.length > 0 && (
+              <div className="missing-box">
+                <Info />
+                <div>
+                  <strong>Missing or unverified</strong>
+                  <p className="mt-0.5">
+                    {verdict.missingNutrients.join(', ')} was not provided. Missing data is never silently assumed safe.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-
-      {/* AI Plain-Language Explanation Block */}
-      <Explanation explanation={explanation} />
-
-      {/* Blacklist / Avoid List & Health Impact */}
-      <AvoidList
-        avoidIngredients={verdict.avoidIngredients}
-        consequences={verdict.consequences}
-      />
-
-      {/* Nutrient Breakdown Bars (Value vs Limit) */}
-      <NutrientBreakdown ruleResults={verdict.ruleResults} product={product} />
 
       {/* Smart Food Alternatives Section */}
       <Alternatives
@@ -498,17 +584,45 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         onOpenDetails={handleOpenDetails}
       />
 
-      {/* Scan Another Button */}
-      <div style={{ marginTop: '16px' }}>
-        <Button variant="primary" size="lg" fullWidth onClick={onScanAnother} icon={<Scan size={20} />}>
-          Scan Another Product
-        </Button>
-      </div>
+      {/* Additional Verified Alternatives (if returned by OFF category query) */}
+      {alternatives.length > 0 && (
+        <div className="result-card alternatives-card mb-6">
+          <div className="result-card-heading">
+            <div>
+              <h2>Category alternatives</h2>
+              <p className="mt-1 text-xs text-plum/50">Verified green alternatives that fit your profile.</p>
+            </div>
+            <Leaf className="size-5 text-sage-strong shrink-0" />
+          </div>
 
-      <div style={{ textAlign: 'center', marginTop: '16px' }}>
-        <span className="caption" style={{ color: 'var(--text-muted)' }}>
-          Evaluated using SHE Scan Engine v{verdict.rulesVersion}
-        </span>
+          <div className="alternatives-list">
+            {alternatives.map((alt, i) => (
+              <div className="alternative-item" key={i}>
+                <ProductArt product={{ name: alt.name, brand: alt.description }} />
+                <div className="min-w-0 flex-1 text-left">
+                  <div className="text-sm font-semibold text-plum">{alt.name}</div>
+                  <div className="mt-0.5 text-xs text-plum/50 truncate">{alt.description || 'Verified alternative'}</div>
+                </div>
+                <NutriVerdictBadge verdict="green" />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="result-actions">
+        <NutriButton onClick={onScanAnother} variant="outline" className="border-plum/20 text-plum">
+          <ScanLine className="size-4" />
+          <span>Scan another product</span>
+        </NutriButton>
+
+        {onHistory && (
+          <NutriButton onClick={onHistory} className="scan-button">
+            <History className="size-4" />
+            <span>Open scan history</span>
+          </NutriButton>
+        )}
       </div>
 
       {/* Product Comparison Modal */}
@@ -530,3 +644,5 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     </div>
   );
 };
+
+export default ResultScreen;

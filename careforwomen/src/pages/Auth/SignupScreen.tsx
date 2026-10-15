@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, UserCheck, Sparkles, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, UserCheck, AlertCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button/Button';
 import { GlassCard } from '../../components/ui/Card/GlassCard';
 import { useAuth } from '../../context/AuthContext';
@@ -77,33 +77,54 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        padding: '24px 20px',
+        padding: '32px 20px',
         maxWidth: '440px',
         margin: '0 auto',
         width: '100%',
+        backgroundColor: '#fbf8f3',
+        color: '#342134',
       }}
     >
       <motion.div
         initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
         style={{ width: '100%' }}
       >
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <h2 className="title-xl" style={{ marginBottom: '6px' }}>
+          <h2
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#342134',
+              letterSpacing: '-0.03em',
+              marginBottom: '6px',
+            }}
+          >
             {isLoginMode ? 'Welcome Back' : 'Create Your Account'}
           </h2>
-          <p className="body-md" style={{ color: 'var(--text-secondary)' }}>
+          <p style={{ fontSize: '14px', color: '#786b78', margin: 0, lineHeight: 1.5 }}>
             {isLoginMode
               ? 'Sign in to access your saved health profile and history'
               : 'Save your profile safely to start instant scanning'}
           </p>
         </div>
 
-        <GlassCard padding="lg" style={{ marginBottom: '20px' }}>
+        <GlassCard
+          padding="lg"
+          style={{
+            marginBottom: '20px',
+            backgroundColor: '#fffdfa',
+            border: '1px solid #e8ddd6',
+            borderRadius: '14px',
+            boxShadow: '0 4px 18px rgba(52, 33, 52, 0.05)',
+          }}
+        >
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             {!isLoginMode && (
               <div>
-                <label className="caption" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 600, color: '#342134', display: 'block', marginBottom: '6px' }}>
                   Your Name (Optional)
                 </label>
                 <div style={{ position: 'relative' }}>
@@ -117,7 +138,7 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
                   />
                   <User
                     size={18}
-                    color="var(--text-muted)"
+                    color="#968694"
                     style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
                   />
                 </div>
@@ -125,7 +146,7 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
             )}
 
             <div>
-              <label className="caption" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#342134', display: 'block', marginBottom: '6px' }}>
                 Email Address
               </label>
               <div style={{ position: 'relative' }}>
@@ -140,14 +161,14 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
                 />
                 <Mail
                   size={18}
-                  color="var(--text-muted)"
+                  color="#968694"
                   style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
                 />
               </div>
             </div>
 
             <div>
-              <label className="caption" style={{ color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 600, color: '#342134', display: 'block', marginBottom: '6px' }}>
                 Password
               </label>
               <div style={{ position: 'relative' }}>
@@ -162,7 +183,7 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
                 />
                 <Lock
                   size={18}
-                  color="var(--text-muted)"
+                  color="#968694"
                   style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
                 />
               </div>
@@ -174,11 +195,11 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  padding: '8px 12px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'rgba(248, 113, 113, 0.12)',
-                  border: '1px solid rgba(248, 113, 113, 0.3)',
-                  color: 'var(--verdict-red)',
+                  padding: '10px 12px',
+                  borderRadius: '8px',
+                  background: '#fbe5e5',
+                  border: '1px solid #e5b7b9',
+                  color: '#b04451',
                   fontSize: '13px',
                 }}
               >
@@ -200,10 +221,13 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
                 setIsLoginMode(!isLoginMode);
               }}
               style={{
-                color: 'var(--accent-lavender)',
+                color: '#743d69',
                 fontSize: '13px',
                 fontWeight: 600,
                 textDecoration: 'underline',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
               }}
             >
               {isLoginMode ? "Don't have an account? Sign up" : 'Already have an account? Log in'}
@@ -219,13 +243,15 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
               alignItems: 'center',
               gap: '12px',
               margin: '16px 0',
-              color: 'var(--text-muted)',
-              fontSize: '12px',
+              color: '#786b78',
+              fontSize: '11px',
+              fontWeight: 700,
+              letterSpacing: '0.05em',
             }}
           >
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: '1px', background: '#e8ddd6' }} />
             <span>OR TRY WITHOUT ACCOUNT</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: '1px', background: '#e8ddd6' }} />
           </div>
 
           <Button
@@ -233,12 +259,12 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
             fullWidth
             onClick={handleGuest}
             isLoading={isSubmitting}
-            icon={<UserCheck size={18} color="var(--accent-rose)" />}
+            icon={<UserCheck size={18} color="#743d69" />}
           >
             Continue as Guest (Anonymous)
           </Button>
 
-          <p className="caption" style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
+          <p style={{ fontSize: '12px', color: '#786b78', marginTop: '10px', lineHeight: 1.4 }}>
             You can link an email anytime later without losing your health settings.
           </p>
         </div>
@@ -246,3 +272,5 @@ export const SignupScreen: React.FC<SignupScreenProps> = ({ onSuccess }) => {
     </div>
   );
 };
+
+export default SignupScreen;

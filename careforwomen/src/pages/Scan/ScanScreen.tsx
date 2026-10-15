@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Camera, Barcode, AlertTriangle } from 'lucide-react';
+import {
+  Search,
+  ScanLine,
+  Upload,
+  Camera,
+  Check,
+  FileText,
+  Info,
+  ArrowRight,
+  AlertCircle,
+  Loader2,
+  X,
+} from 'lucide-react';
+import { NutriButton } from '../../components/ui/NutriButton';
+import { NutriVerdictBadge } from '../../components/ui/NutriVerdictBadge';
+import { ProductArt } from '../../components/ui/ProductArt';
 import { BarcodeScanner } from '../../components/scanner/BarcodeScanner';
 import { LabelUploader } from '../../components/scanner/LabelUploader';
-import { ErrorState } from '../../components/ui/ErrorState/ErrorState';
 import { fetchProductByBarcode } from '../../services/openFoodFacts';
 import { runVerdictEngine } from '../../engine/verdictEngine';
 import { explainVerdict } from '../../services/edgeFunctions';
@@ -19,54 +32,117 @@ export interface ScanScreenProps {
   onStartReview: (extractedData: Partial<Product>) => void;
 }
 
+export const DEMO_PRODUCTS: Product[] = [
+  {
+    barcode: 'demo-oat',
+    name: 'Oat & Seed Granola',
+    brand: 'Field Day',
+    category: 'Breakfast',
+    source: 'manual',
+    servingUnit: 'per100g',
+    servingSize: '40g',
+    nutrients: {
+      energy_kcal: 390,
+      sugar_g: 3.5,
+      added_sugar_g: 0,
+      saturated_fat_g: 1.2,
+      total_fat_g: 7.0,
+      sodium_mg: 45,
+      fiber_g: 5.0,
+      protein_g: 6.0,
+      carbs_g: 58,
+    },
+    ingredients: ['Whole grain oats', 'Pumpkin seeds', 'Chia seeds', 'Cinnamon', 'Sea salt'],
+    allergenTags: [],
+    tracesTags: [],
+    additives: [],
+  },
+  {
+    barcode: 'demo-yogurt',
+    name: 'Strawberry Yogurt',
+    brand: 'Morrow Farms',
+    category: 'Dairy',
+    source: 'manual',
+    servingUnit: 'per100g',
+    servingSize: '150g',
+    nutrients: {
+      energy_kcal: 140,
+      sugar_g: 16.0,
+      added_sugar_g: 14.0,
+      saturated_fat_g: 2.5,
+      total_fat_g: 3.5,
+      sodium_mg: 85,
+      fiber_g: 0.5,
+      protein_g: 5.0,
+      carbs_g: 22,
+    },
+    ingredients: ['Cultured milk', 'Strawberries', 'Cane sugar', 'Natural flavor', 'Pectin'],
+    allergenTags: ['en:milk'],
+    tracesTags: [],
+    additives: ['Pectin'],
+  },
+  {
+    barcode: 'demo-cookie',
+    name: 'Chocolate Chip Cookies',
+    brand: 'Sunday Market',
+    category: 'Snacks',
+    source: 'manual',
+    servingUnit: 'per100g',
+    servingSize: '30g',
+    nutrients: {
+      energy_kcal: 480,
+      sugar_g: 28.0,
+      added_sugar_g: 18.0,
+      saturated_fat_g: 9.0,
+      total_fat_g: 22.0,
+      sodium_mg: 290,
+      fiber_g: 2.0,
+      protein_g: 5.5,
+      carbs_g: 64,
+    },
+    ingredients: ['Wheat flour', 'Cane sugar', 'Butter', 'Peanuts', 'Chocolate chips', 'Eggs'],
+    allergenTags: ['en:peanuts', 'en:milk', 'en:gluten', 'en:eggs'],
+    tracesTags: [],
+    additives: [],
+  },
+];
+
 export const ScanScreen: React.FC<ScanScreenProps> = ({
-  onBack,
+  onBack: _onBack,
   onScanComplete,
   onStartReview,
 }) => {
   const { profile } = useProfile();
   const { addScan } = useHistory();
 
-  const [activeMode, setActiveMode] = useState<'barcode' | 'ocr'>('barcode');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorState, setErrorState] = useState<{
-    type: 'not_found' | 'offline' | 'general';
-    title: string;
-    description: string;
-  } | null>(null);
+  // State
+  const [search, setSearch] = useState('');
+  const [barcodeInput, setBarcodeInput] = useState('');
+  const [selectedDemo, setSelectedDemo] = useState<Product>(DEMO_PRODUCTS[0]);
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const handleBarcodeDetected = async (barcode: string) => {
-    if (isProcessing) return;
-    setIsProcessing(true);
-    setErrorState(null);
+  // Scan modes: 'manual' (search/inputs) | 'camera' (live webcam) | 'ocr' (label photo)
+  const [activeMode, setActiveMode] = useState<'input' | 'camera' | 'ocr'>('input');
 
-    const res = await fetchProductByBarcode(barcode);
+  // Filter demo products by search query
+  const filteredDemos = DEMO_PRODUCTS.filter((p) =>
+    `${p.name} ${p.brand || ''} ${p.category || ''}`.toLowerCase().includes(search.toLowerCase())
+  );
 
-    if (res.status === 'not_found') {
-      setIsProcessing(false);
-      setErrorState({
-        type: 'not_found',
-        title: 'Product Not Found in Database',
-        description: `Barcode "${barcode}" is not registered in Open Food Facts. Snap a quick photo of the ingredient label instead!`,
-      });
-      return;
-    }
+  // Shared processing function: runs verdict engine, fetches AI explanation, saves scan record
+  const processProductAssessment = async (product: Product, source: 'openfoodfacts' | 'ocr' | 'manual') => {
+    if (!profile) return;
+    setLoading(true);
+    setLoadingMessage(`Evaluating ${product.name} against your health profile…`);
+    setErrorMsg(null);
 
-    if (res.status === 'network_error') {
-      setIsProcessing(false);
-      setErrorState({
-        type: 'offline',
-        title: 'Connection Issue',
-        description: res.error || 'Failed to reach product database. Check your internet connection.',
-      });
-      return;
-    }
+    try {
+      // 1. Run deterministic rule engine
+      const verdict = runVerdictEngine(product, profile);
 
-    if (res.product && profile) {
-      // 1. Run deterministic verdict engine
-      const verdict = runVerdictEngine(res.product, profile);
-
-      // 2. Fetch plain-language AI explanation
+      // 2. Fetch AI / deterministic explanation
       const conditionSummaries = [
         ...profile.lifeStages.map((s) => s.toUpperCase()),
         profile.diabetesType !== 'none' ? profile.diabetesType.toUpperCase() : null,
@@ -74,200 +150,333 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
       ].filter(Boolean) as string[];
 
       const explResult = await explainVerdict(
-        res.product,
+        product,
         verdict,
         conditionSummaries,
         profile.allergies,
         profile.id
       );
 
-      // 3. Create Scan Record
+      // 3. Create full scan record
       const record: ScanRecord = {
         id: uuidv4(),
         userId: profile.id,
-        barcode: res.product.barcode,
-        source: 'openfoodfacts',
-        product: res.product,
+        barcode: product.barcode,
+        source,
+        product,
         verdict,
         explanation: explResult.explanation,
         rulesVersion: verdict.rulesVersion,
         scannedAt: new Date().toISOString(),
       };
 
+      // 4. Save to HistoryContext (syncs to Supabase and localStorage)
       await addScan(record);
-      setIsProcessing(false);
+
+      setLoading(false);
       onScanComplete(record);
-    } else {
-      setIsProcessing(false);
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMsg(err.message || 'An error occurred during assessment.');
     }
   };
 
-  const handleLabelExtracted = (extractedData: Partial<Product>) => {
-    onStartReview(extractedData);
+  // Handle direct barcode search via Open Food Facts
+  const handleAnalyzeBarcode = async (barcode: string) => {
+    const clean = barcode.trim();
+    if (!clean) return;
+
+    setLoading(true);
+    setLoadingMessage(`Looking up barcode "${clean}" in Open Food Facts database…`);
+    setErrorMsg(null);
+
+    const res = await fetchProductByBarcode(clean);
+
+    if (res.status === 'not_found' || !res.product) {
+      setLoading(false);
+      setErrorMsg(`Barcode "${clean}" was not found in the product database. Try uploading the ingredient label photo instead!`);
+      return;
+    }
+
+    if (res.status === 'network_error') {
+      setLoading(false);
+      setErrorMsg(res.error || 'Failed to reach product database. Check your internet connection.');
+      return;
+    }
+
+    await processProductAssessment(res.product, 'openfoodfacts');
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        minHeight: '100vh',
-        padding: '16px 20px',
-        maxWidth: '480px',
-        margin: '0 auto',
-        width: '100%',
-        position: 'relative',
-      }}
-    >
-      {/* Top Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-        }}
-      >
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            color: 'var(--text-primary)',
-            background: 'rgba(255, 255, 255, 0.08)',
-            width: '38px',
-            height: '38px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ArrowLeft size={20} />
-        </button>
-
-        {/* Tab Toggle: Barcode vs Photo OCR */}
-        <div
-          style={{
-            display: 'flex',
-            background: 'rgba(255, 255, 255, 0.06)',
-            borderRadius: 'var(--radius-full)',
-            padding: '3px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => {
-              setErrorState(null);
-              setActiveMode('barcode');
-            }}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: activeMode === 'barcode' ? '#120815' : 'var(--text-secondary)',
-              background: activeMode === 'barcode' ? 'var(--accent-rose)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-            }}
-          >
-            <Barcode size={16} />
-            <span>Barcode</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              setErrorState(null);
-              setActiveMode('ocr');
-            }}
-            style={{
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-full)',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: activeMode === 'ocr' ? '#120815' : 'var(--text-secondary)',
-              background: activeMode === 'ocr' ? 'var(--accent-lavender)' : 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              transition: 'all 0.2s',
-            }}
-          >
-            <Camera size={16} />
-            <span>Label OCR</span>
-          </button>
+    <div className="animate-in">
+      {/* Page Heading */}
+      <div className="page-heading">
+        <div>
+          <div className="eyebrow">Product assessment</div>
+          <h1>Scan a product</h1>
+          <p>Search a barcode, use your camera, or test with a demonstration scenario.</p>
         </div>
       </div>
 
-      {/* Main Scanner Body */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {errorState ? (
-          <ErrorState
-            type={errorState.type}
-            title={errorState.title}
-            description={errorState.description}
-            actionText={errorState.type === 'not_found' ? '📸 Take Photo of Label' : 'Try Again'}
-            onAction={() => {
-              if (errorState.type === 'not_found') {
-                setErrorState(null);
-                setActiveMode('ocr');
-              } else {
-                setErrorState(null);
-              }
-            }}
-            secondaryActionText="Cancel"
-            onSecondaryAction={onBack}
-          />
-        ) : activeMode === 'barcode' ? (
-          <BarcodeScanner
-            onDetected={handleBarcodeDetected}
-            onSwitchToUpload={() => setActiveMode('ocr')}
-            isProcessing={isProcessing}
-          />
-        ) : (
-          <LabelUploader onExtracted={handleLabelExtracted} userId={profile?.id} />
-        )}
+      {/* Error Alert if any */}
+      {errorMsg && (
+        <div className="allergen-alert mb-6">
+          <AlertCircle className="size-5 shrink-0" />
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Unable to analyze product</div>
+            <p className="mt-1 text-xs leading-relaxed">{errorMsg}</p>
+          </div>
+          <button onClick={() => setErrorMsg(null)} className="text-danger hover:opacity-75" type="button">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
-        {isProcessing && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 80,
-              background: 'rgba(5, 5, 12, 0.85)',
-              backdropFilter: 'blur(10px)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+      {/* Main 2-Column Layout */}
+      <div className="scan-layout">
+        {/* Left Column: Live Inputs / Camera / OCR */}
+        <div className="scan-main">
+          {/* Mode Switcher Tabs */}
+          <div className="flex items-center gap-2 mb-6 border-b border-[#eadfd9] pb-3">
+            <button
+              type="button"
+              onClick={() => setActiveMode('input')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeMode === 'input'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-plum/60 hover:text-plum hover:bg-black/5'
+              }`}
+            >
+              Barcode & Search
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('camera')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                activeMode === 'camera'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-plum/60 hover:text-plum hover:bg-black/5'
+              }`}
+            >
+              <Camera className="size-3.5" />
+              <span>Live Camera Scanner</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveMode('ocr')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                activeMode === 'ocr'
+                  ? 'bg-primary text-white shadow-sm'
+                  : 'text-plum/60 hover:text-plum hover:bg-black/5'
+              }`}
+            >
+              <Upload className="size-3.5" />
+              <span>Label Photo OCR</span>
+            </button>
+          </div>
+
+          {/* Mode 1: Search & Barcode Input */}
+          {activeMode === 'input' && (
+            <div className="space-y-4">
+              <div className="search-box">
+                <Search className="size-4 text-plum/40" />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Filter demonstration scenarios by name or category"
+                  aria-label="Search demo scenarios"
+                />
+                {search && (
+                  <button onClick={() => setSearch('')} className="text-plum/40 hover:text-plum text-xs">
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              <div className="scan-or">
+                <span>or lookup by barcode</span>
+              </div>
+
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAnalyzeBarcode(barcodeInput);
+                }}
+                className="input-row"
+              >
+                <div className="barcode-input">
+                  <ScanLine className="size-4 text-plum/40" />
+                  <input
+                    value={barcodeInput}
+                    onChange={(e) => setBarcodeInput(e.target.value)}
+                    placeholder="Enter barcode number (e.g. 7622210449283)"
+                    aria-label="Barcode number"
+                  />
+                  <span>OPEN FOOD FACTS</span>
+                </div>
+                <NutriButton
+                  type="submit"
+                  disabled={!barcodeInput.trim() || loading}
+                  className="scan-button shrink-0"
+                >
+                  {loading ? <Loader2 className="size-4 animate-spin" /> : 'Analyze'}
+                </NutriButton>
+              </form>
+
+              {/* Helpful Preset Barcode chips */}
+              <div className="pt-2">
+                <div className="text-[11px] font-semibold text-plum/50 mb-2">Popular test barcodes:</div>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { code: '3017620422003', label: 'Nutella Spread' },
+                    { code: '7622210449283', label: 'Oreo Cookies' },
+                    { code: '5449000000996', label: 'Coca-Cola' },
+                    { code: '3033490004523', label: 'Danone Yogurt' },
+                  ].map((p) => (
+                    <button
+                      key={p.code}
+                      type="button"
+                      onClick={() => {
+                        setBarcodeInput(p.code);
+                        handleAnalyzeBarcode(p.code);
+                      }}
+                      className="text-[11px] bg-secondary/80 hover:bg-secondary text-plum px-2.5 py-1 rounded-md transition-colors"
+                    >
+                      {p.label} <span className="opacity-40">({p.code.slice(-4)})</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="upload-zone mt-6">
+                <Camera className="size-5 text-plum/40 shrink-0" />
+                <div>
+                  <div className="text-sm font-semibold text-plum">Switch to real camera scanner</div>
+                  <div className="mt-0.5 text-xs text-plum/50">
+                    Use your device webcam or phone camera to scan packaging in real time.
+                  </div>
+                </div>
+                <NutriButton
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setActiveMode('camera')}
+                  className="ml-auto"
+                >
+                  Open camera
+                </NutriButton>
+              </div>
+            </div>
+          )}
+
+          {/* Mode 2: Live Camera Barcode Scanner */}
+          {activeMode === 'camera' && (
+            <div className="space-y-4">
+              <div className="rounded-xl overflow-hidden border border-[#eadfd9] bg-black">
+                <BarcodeScanner
+                  onDetected={(code) => handleAnalyzeBarcode(code)}
+                  onSwitchToUpload={() => setActiveMode('ocr')}
+                  isProcessing={loading}
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs text-plum/50 pt-1">
+                <span>Hold barcode steady inside the viewfinder window.</span>
+                <button
+                  type="button"
+                  onClick={() => setActiveMode('input')}
+                  className="text-primary font-semibold hover:underline"
+                >
+                  Return to text input
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Mode 3: Label Image OCR */}
+          {activeMode === 'ocr' && (
+            <div className="space-y-4">
+              <div className="border border-dashed border-[#d8c7d1] rounded-xl p-4 bg-[#fffdfa]">
+                <LabelUploader
+                  onExtracted={(extracted) => onStartReview(extracted)}
+                  userId={profile?.id}
+                />
+              </div>
+              <div className="text-xs text-plum/50">
+                Snap or upload a clear photo of the nutrition label or ingredient list for automatic extraction.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Demo Dataset Scenario Panel */}
+        <div className="demo-panel">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="eyebrow">DEMO DATASET</div>
+              <h2 className="mt-1 font-serif text-xl font-semibold text-plum">Try a scenario</h2>
+            </div>
+            <FileText className="size-5 text-plum/30" />
+          </div>
+
+          <div className="demo-list">
+            {filteredDemos.map((product) => {
+              const demoVerdict = profile ? runVerdictEngine(product, profile).overall : 'green';
+              const isSelected = selectedDemo.barcode === product.barcode;
+
+              return (
+                <button
+                  key={product.barcode}
+                  onClick={() => setSelectedDemo(product)}
+                  className={`demo-product ${isSelected ? 'demo-product-selected' : ''}`}
+                  type="button"
+                >
+                  <ProductArt product={product} />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="truncate text-sm font-semibold text-plum">{product.name}</div>
+                    <div className="mt-0.5 text-[11px] text-plum/45">
+                      {product.brand} · {product.category}
+                    </div>
+                    <div className="mt-2">
+                      <NutriVerdictBadge verdict={demoVerdict} />
+                    </div>
+                  </div>
+                  {isSelected && <Check className="size-4 text-primary shrink-0" />}
+                </button>
+              );
+            })}
+
+            {filteredDemos.length === 0 && (
+              <div className="py-8 text-center text-sm text-plum/50">No demonstration products match your search.</div>
+            )}
+          </div>
+
+          <NutriButton
+            disabled={!filteredDemos.length || loading}
+            onClick={() => processProductAssessment(selectedDemo, 'manual')}
+            className="w-full scan-button h-11"
           >
-            <div
-              style={{
-                width: '54px',
-                height: '54px',
-                border: '3px solid rgba(232, 143, 167, 0.2)',
-                borderTopColor: 'var(--accent-rose)',
-                borderRadius: '50%',
-                animation: 'pulseGlow 1s linear infinite',
-                marginBottom: '16px',
-              }}
-            />
-            <h3 className="title-md" style={{ color: 'var(--text-primary)' }}>
-              Analyzing Food Safety...
-            </h3>
-            <p className="caption" style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
-              Fetching nutritional facts & calculating verdict
-            </p>
-          </motion.div>
-        )}
+            {loading ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="size-4 animate-spin" />
+                <span>{loadingMessage || 'Analyzing…'}</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <span>View personalized assessment</span>
+                <ArrowRight className="size-4" />
+              </span>
+            )}
+          </NutriButton>
+
+          <div className="demo-note">
+            <Info className="size-4 shrink-0 text-plum/40 mt-0.5" />
+            <span>
+              Demonstration scenarios evaluate locally against your active profile with realistic nutrition records.
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
+
+export default ScanScreen;

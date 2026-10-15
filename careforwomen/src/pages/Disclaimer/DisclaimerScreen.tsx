@@ -17,60 +17,86 @@ export const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({ onAccept }) 
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        padding: '24px 20px',
+        padding: '32px 20px',
+        backgroundColor: '#fbf8f3',
+        color: '#342134',
       }}
     >
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{ width: '100%', maxWidth: '400px' }}
+        transition={{ duration: 0.4 }}
+        style={{ width: '100%', maxWidth: '440px' }}
       >
+        {/* Header with Shield Icon */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div
             style={{
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(232, 143, 167, 0.2) 0%, rgba(196, 181, 253, 0.2) 100%)',
-              border: '1.5px solid var(--accent-rose)',
+              background: '#f8eff5',
+              border: '1.5px solid #743d69',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px',
-              boxShadow: '0 0 25px var(--accent-rose-glow)',
+              boxShadow: '0 8px 24px rgba(116, 61, 105, 0.12)',
             }}
           >
-            <ShieldCheck size={32} color="var(--accent-rose)" />
+            <ShieldCheck size={30} color="#743d69" />
           </div>
 
-          <h1 className="title-xl" style={{ marginBottom: '8px' }}>
-            Welcome to <span className="gradient-text-rose">SHE Scan</span>
+          <h1
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#342134',
+              letterSpacing: '-0.03em',
+              marginBottom: '8px',
+              lineHeight: 1.2,
+            }}
+          >
+            Welcome to <span style={{ color: '#743d69', fontStyle: 'italic' }}>NutriLens</span>
           </h1>
-          <p className="body-md" style={{ color: 'var(--text-secondary)' }}>
-            Empowering women with personalized packaged food safety clarity.
+          <p style={{ fontSize: '14px', color: '#786b78', lineHeight: 1.5, margin: 0 }}>
+            Personalized packaged food safety and ingredient clarity.
           </p>
         </div>
 
-        <GlassCard padding="lg" style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: 'var(--accent-lavender)' }}>
+        {/* Medical Notice Card */}
+        <GlassCard
+          padding="lg"
+          style={{
+            marginBottom: '24px',
+            backgroundColor: '#fffdfa',
+            border: '1px solid #e8ddd6',
+            borderRadius: '14px',
+            boxShadow: '0 4px 18px rgba(52, 33, 52, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#743d69' }}>
             <HeartHandshake size={20} />
-            <h3 className="title-md" style={{ fontSize: '16px' }}>Medical Notice</h3>
+            <h3 style={{ fontFamily: "Georgia, serif", fontSize: '16px', fontWeight: 700, color: '#342134', margin: 0 }}>
+              Medical Notice
+            </h3>
           </div>
 
-          <p className="body-md" style={{ color: 'var(--text-primary)', marginBottom: '14px', lineHeight: 1.6 }}>
-            <strong>SHE Scan provides general nutritional guidance, not medical advice.</strong>
+          <p style={{ color: '#342134', marginBottom: '14px', lineHeight: 1.6, fontSize: '14px' }}>
+            <strong>NutriLens provides educational nutritional guidance, not professional medical advice.</strong>
           </p>
 
-          <p className="body-md" style={{ color: 'var(--text-secondary)', marginBottom: '14px', lineHeight: 1.5, fontSize: '13.5px' }}>
-            Our deterministic rule engine compares label values with established nutrition benchmarks for conditions like PCOS, pregnancy, breastfeeding, diabetes, and allergies.
+          <p style={{ color: '#786b78', marginBottom: '14px', lineHeight: 1.6, fontSize: '13.5px' }}>
+            Our deterministic rule engine compares packaging label data with established nutrition benchmarks for conditions like PCOS, pregnancy, breastfeeding, diabetes, and food allergies.
           </p>
 
-          <p className="caption" style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>
+          <p style={{ color: '#786b78', lineHeight: 1.5, fontSize: '12px', margin: 0 }}>
             Always consult your physician, OB/GYN, or registered dietitian before making significant dietary modifications or consuming foods with severe allergic sensitivities.
           </p>
         </GlassCard>
 
+        {/* Accept Button */}
         <Button variant="primary" size="lg" fullWidth onClick={onAccept}>
           I Understand & Agree
         </Button>
@@ -78,3 +104,5 @@ export const DisclaimerScreen: React.FC<DisclaimerScreenProps> = ({ onAccept }) 
     </div>
   );
 };
+
+export default DisclaimerScreen;
