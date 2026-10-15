@@ -1,11 +1,9 @@
 .glass-panel {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s ease;
 }
 
 .glass-panel-interactive {
@@ -14,8 +12,9 @@
 
 .glass-panel-interactive:hover {
   background: var(--glass-bg-hover);
-  border-color: rgba(255, 255, 255, 0.14);
+  border-color: #d8c7d1;
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 33, 52, 0.08);
 }
 
 .glass-panel-interactive:active {
@@ -24,36 +23,41 @@
 }
 
 .glass-card-rose {
-  background: linear-gradient(135deg, rgba(232, 143, 167, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  border: 1px solid rgba(232, 143, 167, 0.2);
+  background: #fffdfa;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card);
 }
 
 .glass-input {
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
   border: 1px solid var(--glass-border);
   color: var(--text-primary);
   border-radius: var(--radius-md);
-  padding: 12px 16px;
-  font-size: 15px;
+  padding: 10px 14px;
+  font-size: 14px;
   outline: none;
   width: 100%;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.glass-input::placeholder {
+  color: var(--text-muted);
+}
+
 .glass-input:focus {
   border-color: var(--accent-rose);
-  box-shadow: 0 0 0 3px var(--accent-rose-soft);
+  box-shadow: 0 0 0 3px rgba(116, 61, 105, 0.12);
 }
 
 .glass-pill {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f7f1ec;
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-full);
-  padding: 6px 14px;
+  padding: 6px 12px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-secondary);
 }

@@ -36,96 +36,177 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onConsented }) => 
         justifyContent: 'center',
         alignItems: 'center',
         minHeight: '100vh',
-        padding: '24px 20px',
-        maxWidth: '440px',
+        padding: '32px 20px',
+        maxWidth: '460px',
         margin: '0 auto',
         width: '100%',
+        backgroundColor: '#fbf8f3',
+        color: '#342134',
       }}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
+        initial={{ opacity: 0, scale: 0.97 }}
         animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
         style={{ width: '100%' }}
       >
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        {/* Header with Lock Icon */}
+        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <div
             style={{
               width: '64px',
               height: '64px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(196, 181, 253, 0.2) 0%, rgba(232, 143, 167, 0.2) 100%)',
-              border: '1.5px solid var(--accent-lavender)',
+              background: '#f8eff5',
+              border: '1.5px solid #743d69',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 16px',
-              boxShadow: '0 0 25px var(--accent-lavender-glow)',
+              boxShadow: '0 8px 24px rgba(116, 61, 105, 0.12)',
             }}
           >
-            <Lock size={30} color="var(--accent-lavender)" />
+            <Lock size={28} color="#743d69" />
           </div>
 
-          <h2 className="title-xl" style={{ marginBottom: '8px' }}>
+          <h1
+            style={{
+              fontFamily: "Georgia, 'Times New Roman', serif",
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#342134',
+              letterSpacing: '-0.03em',
+              marginBottom: '8px',
+              lineHeight: 1.2,
+            }}
+          >
             Health Data Consent
-          </h2>
-          <p className="body-md" style={{ color: 'var(--text-secondary)' }}>
+          </h1>
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#786b78',
+              lineHeight: 1.5,
+              margin: 0,
+            }}
+          >
             We take your health data privacy seriously.
           </p>
         </div>
 
-        <GlassCard padding="lg" style={{ marginBottom: '24px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <CheckCircle2 size={20} color="var(--accent-rose)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p className="body-md" style={{ color: 'var(--text-primary)', fontSize: '13.5px' }}>
+        {/* Consent Details Card */}
+        <GlassCard
+          padding="lg"
+          style={{
+            marginBottom: '24px',
+            backgroundColor: '#fffdfa',
+            border: '1px solid #e8ddd6',
+            borderRadius: '14px',
+            boxShadow: '0 4px 18px rgba(52, 33, 52, 0.05)',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Statement 1 */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <CheckCircle2
+                size={20}
+                color="#743d69"
+                style={{ flexShrink: 0, marginTop: '2px' }}
+              />
+              <p
+                style={{
+                  color: '#342134',
+                  fontSize: '13.5px',
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
                 Your health condition answers (PCOS, pregnancy status, diabetes type, and allergies) will be saved securely to your personal account with Row Level Security (RLS).
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <CheckCircle2 size={20} color="var(--accent-rose)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p className="body-md" style={{ color: 'var(--text-primary)', fontSize: '13.5px' }}>
+            {/* Statement 2 */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <CheckCircle2
+                size={20}
+                color="#743d69"
+                style={{ flexShrink: 0, marginTop: '2px' }}
+              />
+              <p
+                style={{
+                  color: '#342134',
+                  fontSize: '13.5px',
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
                 Only you have read or write access to your data. No third-party ad networks or data brokers ever receive your health profile.
               </p>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-              <CheckCircle2 size={20} color="var(--accent-rose)" style={{ flexShrink: 0, marginTop: '2px' }} />
-              <p className="body-md" style={{ color: 'var(--text-primary)', fontSize: '13.5px' }}>
+            {/* Statement 3 */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              <CheckCircle2
+                size={20}
+                color="#743d69"
+                style={{ flexShrink: 0, marginTop: '2px' }}
+              />
+              <p
+                style={{
+                  color: '#342134',
+                  fontSize: '13.5px',
+                  lineHeight: 1.6,
+                  margin: 0,
+                }}
+              >
                 You can permanently delete your account and all associated scan history at any time with a single tap in Profile settings.
               </p>
             </div>
           </div>
 
+          {/* Interactive Checkbox */}
           <div
             onClick={() => setAgreed(!agreed)}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              marginTop: '20px',
-              paddingTop: '16px',
-              borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+              gap: '12px',
+              marginTop: '22px',
+              paddingTop: '18px',
+              borderTop: '1px solid #e8ddd6',
               cursor: 'pointer',
+              userSelect: 'none',
             }}
           >
             <input
               type="checkbox"
+              id="consent-checkbox"
               checked={agreed}
               onChange={(e) => setAgreed(e.target.checked)}
               style={{
-                accentColor: 'var(--accent-rose)',
+                accentColor: '#743d69',
                 width: '18px',
                 height: '18px',
                 cursor: 'pointer',
+                flexShrink: 0,
               }}
             />
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+            <label
+              htmlFor="consent-checkbox"
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#342134',
+                lineHeight: 1.4,
+                cursor: 'pointer',
+              }}
+            >
               I consent to storing my health profile for food safety scanning.
-            </span>
+            </label>
           </div>
         </GlassCard>
 
+        {/* Submit Action Button */}
         <Button
           variant="primary"
           size="lg"
@@ -141,3 +222,5 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onConsented }) => 
     </div>
   );
 };
+
+export default ConsentScreen;

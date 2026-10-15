@@ -1,3 +1,4 @@
+@import './styles/nutrilens.css';
 @import './styles/variables.css';
 @import './styles/glassmorphism.css';
 @import './styles/typography.css';
@@ -10,20 +11,20 @@
 }
 
 html, body {
-  background-color: var(--bg-primary);
-  background-image: var(--bg-gradient);
-  background-attachment: fixed;
-  color: var(--text-primary);
+  background-color: var(--background);
+  color: var(--foreground);
   min-height: 100vh;
   min-height: 100dvh;
   overflow-x: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100dvh;
-  display: flex;
-  justify-content: center;
+  width: 100%;
 }
 
 .app-viewport {
@@ -31,10 +32,12 @@ html, body {
   max-width: var(--max-app-width);
   min-height: 100vh;
   min-height: 100dvh;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   position: relative;
-  background-color: rgba(10, 10, 20, 0.4);
+  background-color: #12121f;
+  color: #f5f4fb;
   box-shadow: 0 0 80px rgba(0, 0, 0, 0.6);
 }
 
@@ -61,8 +64,8 @@ html, body {
 
 /* Custom Sleek Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -70,12 +73,12 @@ html, body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(116, 61, 105, 0.2);
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-rose);
+  background: rgba(116, 61, 105, 0.4);
 }
 
 button {

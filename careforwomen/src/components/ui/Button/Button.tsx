@@ -43,15 +43,13 @@ export const Button: React.FC<ButtonProps> = ({
 
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
-      background: 'linear-gradient(135deg, #e88fa7 0%, #c4b5fd 100%)',
-      color: '#120815',
-      boxShadow: '0 4px 20px rgba(232, 143, 167, 0.35)',
+      background: '#743d69',
+      color: '#ffffff',
+      boxShadow: '0 4px 14px rgba(116, 61, 105, 0.25)',
       border: 'none',
     },
     secondary: {
-      background: 'rgba(255, 255, 255, 0.07)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      background: '#f7f1ec',
       color: 'var(--text-primary)',
       border: '1px solid var(--glass-border)',
     },
@@ -66,9 +64,9 @@ export const Button: React.FC<ButtonProps> = ({
       border: 'none',
     },
     danger: {
-      background: 'rgba(248, 113, 113, 0.12)',
-      color: 'var(--verdict-red)',
-      border: '1px solid rgba(248, 113, 113, 0.3)',
+      background: '#fbe5e5',
+      color: '#b04451',
+      border: '1px solid #e5b7b9',
     },
   };
 

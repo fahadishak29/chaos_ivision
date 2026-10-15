@@ -75,6 +75,9 @@ export const LabelReviewScreen: React.FC<LabelReviewScreenProps> = ({
         maxWidth: '480px',
         margin: '0 auto',
         width: '100%',
+        backgroundColor: '#fbf8f3',
+        color: '#342134',
+        minHeight: '100vh',
       }}
     >
       {/* Header */}
