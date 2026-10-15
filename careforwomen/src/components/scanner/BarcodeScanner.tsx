@@ -33,6 +33,11 @@ export const SAMPLE_BARCODES = [
     tag: 'Lactose & Calcium',
   },
   {
+    barcode: '8901491103860',
+    name: 'Quaker Oats (100% Rolled Oats)',
+    tag: 'Whole Grain · 0g Added Sugar',
+  },
+  {
     barcode: '0041220576920',
     name: 'Pure Rolled Oats',
     tag: 'High Fiber Wholesome',
