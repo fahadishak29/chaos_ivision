@@ -13,20 +13,32 @@ import {
   ScanLine,
   History,
   X,
+  ShoppingBag,
+  Plus,
+  Minus,
 } from 'lucide-react';
 import { NutriButton } from '../../components/ui/NutriButton';
 import { NutriVerdictBadge } from '../../components/ui/NutriVerdictBadge';
 import { ProductArt } from '../../components/ui/ProductArt';
 import { useProfile } from '../../context/ProfileContext';
+import { useFavourites } from '../../context/FavouritesContext';
+import { useBasket } from '../../context/BasketContext';
 import { ScanRecord } from '../../types/scan';
 import { Alternative } from '../../types/verdict';
+import { SmartAlternative, ProductComparisonData } from '../../types/alternatives';
 import { fetchVerifiedGreenAlternatives } from '../../services/alternatives';
+import { generateProductComparison } from '../../services/alternativesEngine';
+import { AlternativesExplorer } from '../../components/alternatives/AlternativesExplorer';
+import { ProductComparisonModal } from '../../components/alternatives/ProductComparisonModal';
+import { AlternativeDetailModal } from '../../components/alternatives/AlternativeDetailModal';
+import { Alternatives } from '../../components/result/Alternatives';
 
 export interface ResultScreenProps {
   record: ScanRecord;
   onScanAnother: () => void;
   onBack: () => void;
   onHistory?: () => void;
+  onOpenBasket?: () => void;
 }
 
 export const ResultScreen: React.FC<ResultScreenProps> = ({
@@ -34,9 +46,31 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
   onScanAnother,
   onBack,
   onHistory,
+  onOpenBasket,
 }) => {
   const { profile } = useProfile();
   const { product, verdict, explanation } = record;
+  const { toggleFavourite, isFavourite } = useFavourites();
+  const { addItem, updateQuantity, getItemByProductId, totalUnits } = useBasket();
+
+  const [viewingAlternatives, setViewingAlternatives] = useState(false);
+  const [comparisonData, setComparisonData] = useState<ProductComparisonData | null>(null);
+  const [isComparisonOpen, setIsComparisonOpen] = useState(false);
+  const [detailAlternative, setDetailAlternative] = useState<SmartAlternative | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  // Basket state for this product
+  const productId = product.barcode || product.name;
+  const existingBasketItem = getItemByProductId(productId);
+  const isInBasket = !!existingBasketItem;
+  const [addQty, setAddQty] = useState(1);
+  const [justAdded, setJustAdded] = useState(false);
+
+  const handleAddToBasket = () => {
+    addItem(product, addQty, undefined, 'scanner');
+    setJustAdded(true);
+    setTimeout(() => setJustAdded(false), 2500);
+  };
 
   const [alternatives, setAlternatives] = useState<Alternative[]>(verdict.alternatives || []);
   const [loadingAlts, setLoadingAlts] = useState(false);
@@ -108,6 +142,29 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
     window.print();
   };
 
+  const handleOpenCompare = (alt: SmartAlternative) => {
+    if (!profile) return;
+    const comp = generateProductComparison(product, alt, profile);
+    setComparisonData(comp);
+    setIsComparisonOpen(true);
+  };
+
+  const handleOpenDetails = (alt: SmartAlternative) => {
+    setDetailAlternative(alt);
+    setIsDetailOpen(true);
+  };
+
+  // If user tapped to explore full alternatives
+  if (viewingAlternatives) {
+    return (
+      <AlternativesExplorer
+        scannedProduct={product}
+        verdict={verdict}
+        onBack={() => setViewingAlternatives(false)}
+      />
+    );
+  }
+
   // Active profile summary string
   const activeConditionLabels: string[] = [];
   if (profile?.lifeStages?.includes('pcos')) activeConditionLabels.push('PCOS / PCOD');
@@ -154,10 +211,23 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
             {product.brand || 'Verified Product'} {product.category ? `· ${product.category}` : ''}
           </p>
         </div>
-        <NutriButton variant="outline" size="sm" onClick={handleShareOrSave}>
-          <Download className="size-3.5" />
-          <span>Save / Share result</span>
-        </NutriButton>
+        <div className="flex items-center gap-2">
+          {onOpenBasket && (
+            <NutriButton variant="outline" size="sm" onClick={onOpenBasket} className="relative">
+              <ShoppingBag className="size-3.5" />
+              <span>Basket</span>
+              {totalUnits > 0 && (
+                <span className="ml-1 px-1.5 py-0.2 rounded-full bg-primary text-white text-[10px] font-bold">
+                  {totalUnits}
+                </span>
+              )}
+            </NutriButton>
+          )}
+          <NutriButton variant="outline" size="sm" onClick={handleShareOrSave}>
+            <Download className="size-3.5" />
+            <span>Save / Share</span>
+          </NutriButton>
+        </div>
       </div>
 
       {/* Verdict Hero Banner */}
@@ -195,6 +265,107 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </div>
       </div>
 
+      {/* Smart Basket Integration Card */}
+      <div
+        className={`p-4 rounded-xl border mb-6 flex flex-col gap-3 transition-colors ${
+          isInBasket ? 'bg-emerald-50/60 border-emerald-200' : 'bg-white border-[#eadfd9]'
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <ShoppingBag className={`size-4 ${isInBasket ? 'text-emerald-700' : 'text-plum/70'}`} />
+            <span className="text-xs font-bold text-plum">
+              {isInBasket ? 'Already in your grocery basket' : 'Grocery Basket'}
+            </span>
+          </div>
+          {isInBasket && (
+            <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+              {existingBasketItem.quantity} {existingBasketItem.quantity === 1 ? 'unit' : 'units'}
+            </span>
+          )}
+        </div>
+
+        {isInBasket ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-plum/65">
+              You scanned a product already in your basket. Adjust quantity or view full basket:
+            </p>
+            <div className="flex items-center gap-2">
+              <div className="inline-flex items-center bg-[#f7f3f0] border border-[#eadfd9] rounded-lg p-0.5">
+                <button
+                  type="button"
+                  aria-label="Decrease quantity"
+                  onClick={() => updateQuantity(existingBasketItem.id, existingBasketItem.quantity - 1)}
+                  className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
+                >
+                  <Minus className="size-3.5" />
+                </button>
+                <span className="w-8 text-center text-xs font-bold text-plum">
+                  {existingBasketItem.quantity}
+                </span>
+                <button
+                  type="button"
+                  aria-label="Increase quantity"
+                  onClick={() => updateQuantity(existingBasketItem.id, existingBasketItem.quantity + 1)}
+                  className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
+                >
+                  <Plus className="size-3.5" />
+                </button>
+              </div>
+
+              {onOpenBasket && (
+                <NutriButton variant="outline" size="sm" onClick={onOpenBasket} className="text-xs">
+                  View in Basket
+                </NutriButton>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center bg-[#f7f3f0] border border-[#eadfd9] rounded-lg p-0.5">
+              <button
+                type="button"
+                aria-label="Decrease quantity"
+                onClick={() => setAddQty(Math.max(1, addQty - 1))}
+                className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
+              >
+                <Minus className="size-3.5" />
+              </button>
+              <span className="w-8 text-center text-xs font-bold text-plum">
+                {addQty}
+              </span>
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                onClick={() => setAddQty(addQty + 1)}
+                className="size-7 rounded flex items-center justify-center hover:bg-white text-plum transition-colors"
+              >
+                <Plus className="size-3.5" />
+              </button>
+            </div>
+
+            <NutriButton
+              variant={justAdded ? 'outline' : 'default'}
+              size="sm"
+              onClick={handleAddToBasket}
+              className={justAdded ? 'border-emerald-500 text-emerald-700' : 'scan-button flex-1 justify-center'}
+            >
+              {justAdded ? (
+                <span className="flex items-center gap-1.5">
+                  <Check className="size-3.5 text-emerald-600" />
+                  <span>Added to basket!</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-1.5">
+                  <ShoppingBag className="size-3.5" />
+                  <span>Add to basket ({addQty})</span>
+                </span>
+              )}
+            </NutriButton>
+          </div>
+        )}
+      </div>
+
       {/* High-priority allergen warning alert if allergens matched */}
       {verdict.allergenMatches && verdict.allergenMatches.length > 0 && (
         <div className="allergen-alert">
@@ -205,6 +376,16 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               {verdict.allergenMatches.map((m) => `"${m.synonym}" (triggers ${m.allergen})`).join(', ')} was found in the ingredients record. Even trace amounts can pose an immediate safety risk.
             </p>
           </div>
+        </div>
+      )}
+
+      {/* Traces Caution Alert Banner */}
+      {verdict.tracesWarnings && verdict.tracesWarnings.length > 0 && verdict.allergenMatches.length === 0 && (
+        <div className="mb-6 p-3.5 rounded-xl border border-amber-300/60 bg-amber-50/70 text-amber-900 text-xs flex items-center gap-2.5">
+          <AlertTriangle className="size-4 shrink-0 text-amber-600" />
+          <span>
+            <strong>Traces Warning:</strong> Packaging indicates traces of allergen: {verdict.tracesWarnings.map((t) => t.allergen).join(', ')}.
+          </span>
         </div>
       )}
 
@@ -394,19 +575,26 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
         </div>
       </div>
 
-      {/* Recommended Alternatives Card */}
-      <div className="result-card alternatives-card">
-        <div className="result-card-heading">
-          <div>
-            <h2>Recommended alternatives</h2>
-            <p className="mt-1 text-xs text-plum/50">Verified green alternatives that fit your profile.</p>
-          </div>
-          <Leaf className="size-5 text-sage-strong shrink-0" />
-        </div>
+      {/* Smart Food Alternatives Section */}
+      <Alternatives
+        scannedProduct={product}
+        verdict={verdict}
+        onExploreAll={() => setViewingAlternatives(true)}
+        onOpenCompare={handleOpenCompare}
+        onOpenDetails={handleOpenDetails}
+      />
 
-        {loadingAlts ? (
-          <p className="mt-4 text-xs text-plum/50 italic">Finding safer alternatives in this category…</p>
-        ) : alternatives.length > 0 ? (
+      {/* Additional Verified Alternatives (if returned by OFF category query) */}
+      {alternatives.length > 0 && (
+        <div className="result-card alternatives-card mb-6">
+          <div className="result-card-heading">
+            <div>
+              <h2>Category alternatives</h2>
+              <p className="mt-1 text-xs text-plum/50">Verified green alternatives that fit your profile.</p>
+            </div>
+            <Leaf className="size-5 text-sage-strong shrink-0" />
+          </div>
+
           <div className="alternatives-list">
             {alternatives.map((alt, i) => (
               <div className="alternative-item" key={i}>
@@ -419,12 +607,8 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
               </div>
             ))}
           </div>
-        ) : (
-          <p className="mt-4 text-xs text-plum/50">
-            No specific alternative products were verified for this category.
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="result-actions">
@@ -440,6 +624,23 @@ export const ResultScreen: React.FC<ResultScreenProps> = ({
           </NutriButton>
         )}
       </div>
+
+      {/* Product Comparison Modal */}
+      <ProductComparisonModal
+        isOpen={isComparisonOpen}
+        onClose={() => setIsComparisonOpen(false)}
+        comparisonData={comparisonData}
+      />
+
+      {/* Alternative Detail Modal */}
+      <AlternativeDetailModal
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        alternative={detailAlternative}
+        onCompare={handleOpenCompare}
+        onToggleFavourite={toggleFavourite}
+        isFavourite={detailAlternative ? isFavourite(detailAlternative.id) : false}
+      />
     </div>
   );
 };

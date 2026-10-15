@@ -23,6 +23,8 @@ export interface HealthProfile {
   lactoseIntolerant: boolean;
   allergies: Allergen[];
   customAllergies: string[];
+  dietaryPreference?: 'all' | 'vegetarian' | 'vegan' | 'pescatarian';
+  budgetPreference?: 'all' | 'budget' | 'moderate';
   consentGiven: boolean;
   createdAt: string;
   updatedAt: string;

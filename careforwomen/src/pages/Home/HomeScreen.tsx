@@ -10,18 +10,21 @@ import {
   BookOpen,
   Info,
   Leaf,
+  ShoppingBag,
 } from 'lucide-react';
 import { NutriButton } from '../../components/ui/NutriButton';
 import { NutriVerdictBadge } from '../../components/ui/NutriVerdictBadge';
 import { ProductArt } from '../../components/ui/ProductArt';
 import { useProfile } from '../../context/ProfileContext';
 import { useHistory } from '../../context/HistoryContext';
+import { useBasket } from '../../context/BasketContext';
 import { ScanRecord } from '../../types/scan';
 
 export interface HomeScreenProps {
   onStartScan: () => void;
   onOpenHistory: () => void;
   onOpenProfile: () => void;
+  onOpenBasket?: () => void;
   onSelectScan: (scan: ScanRecord) => void;
 }
 
@@ -29,10 +32,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onStartScan,
   onOpenHistory,
   onOpenProfile,
+  onOpenBasket,
   onSelectScan,
 }) => {
   const { profile } = useProfile();
   const { scans } = useHistory();
+  const { totalItemsCount, uniqueProductsCount } = useBasket();
 
   // Greeting based on time of day
   const hour = new Date().getHours();
@@ -110,6 +115,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </NutriButton>
         </div>
 
+
         {/* Orbit Art */}
         <div className="hero-illustration" aria-hidden="true">
           <div className="hero-orbit orbit-one" />
@@ -157,6 +163,34 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <span>{preferences.length === 0 ? 'Set up preferences' : 'Add preference'}</span>
         </button>
       </div>
+
+      {/* Smart Basket Quick Card (Shown when basket has items) */}
+      {totalItemsCount > 0 && onOpenBasket && (
+        <div
+          onClick={onOpenBasket}
+          className="cursor-pointer mb-6 p-4 rounded-xl border border-primary/20 bg-primary/5 flex items-center justify-between hover:bg-primary/10 transition-colors"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') onOpenBasket();
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-full bg-primary text-white flex items-center justify-center">
+              <ShoppingBag className="size-5" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-plum">
+                Smart Grocery Basket ({totalItemsCount} units)
+              </div>
+              <div className="text-xs text-primary/70">
+                {uniqueProductsCount} unique items analyzed against your profile
+              </div>
+            </div>
+          </div>
+          <ArrowRight className="size-4 text-primary" />
+        </div>
+      )}
 
       {/* Section: Recently Scanned */}
       <div className="section-row recent-row">

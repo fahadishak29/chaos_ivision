@@ -1,9 +1,10 @@
 import React from 'react';
-import { Home, ScanLine, UserRound, History, Settings, ChevronRight, ShieldCheck, X } from 'lucide-react';
+import { Home, ScanLine, UserRound, History, Settings, ChevronRight, ShieldCheck, X, ShoppingBag } from 'lucide-react';
 import { NutriLogo } from '../ui/NutriLogo';
 import { useProfile } from '../../context/ProfileContext';
+import { useBasket } from '../../context/BasketContext';
 
-export type NutriPage = 'home' | 'scan' | 'profile' | 'history' | 'settings' | 'result';
+export type NutriPage = 'home' | 'scan' | 'profile' | 'history' | 'basket' | 'settings' | 'result';
 
 export interface NutriSidebarProps {
   currentPage: NutriPage;
@@ -19,10 +20,12 @@ export const NutriSidebar: React.FC<NutriSidebarProps> = ({
   onCloseMobile,
 }) => {
   const { profile } = useProfile();
+  const { totalItemsCount } = useBasket();
 
   const navItems = [
     { id: 'home' as NutriPage, label: 'Overview', icon: Home },
     { id: 'scan' as NutriPage, label: 'Scan product', icon: ScanLine },
+    { id: 'basket' as NutriPage, label: 'Grocery basket', icon: ShoppingBag, badge: totalItemsCount },
     { id: 'profile' as NutriPage, label: 'My profile', icon: UserRound },
     { id: 'history' as NutriPage, label: 'Scan history', icon: History },
     { id: 'settings' as NutriPage, label: 'Settings', icon: Settings },
@@ -54,7 +57,7 @@ export const NutriSidebar: React.FC<NutriSidebarProps> = ({
       <div className="sidebar-rule" />
 
       <nav className="flex flex-col gap-1" aria-label="Primary navigation">
-        {navItems.map(({ id, label, icon: Icon }) => {
+        {navItems.map(({ id, label, icon: Icon, badge }) => {
           const isActive = currentPage === id || (id === 'scan' && currentPage === 'result');
           return (
             <button
@@ -65,6 +68,11 @@ export const NutriSidebar: React.FC<NutriSidebarProps> = ({
             >
               <Icon className="size-4 shrink-0" />
               <span>{label}</span>
+              {badge !== undefined && badge > 0 && (
+                <span className="ml-auto px-1.5 py-0.2 min-w-5 h-5 rounded-full bg-primary text-white text-[10px] font-bold flex items-center justify-center">
+                  {badge}
+                </span>
+              )}
               {id === 'scan' && <span className="nav-kbd">⌘ K</span>}
             </button>
           );

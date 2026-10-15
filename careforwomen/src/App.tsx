@@ -4,6 +4,8 @@ import { ScanLine } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
 import { HistoryProvider, useHistory } from './context/HistoryContext';
+import { FavouritesProvider } from './context/FavouritesContext';
+import { BasketProvider } from './context/BasketContext';
 import { DisclaimerScreen } from './pages/Disclaimer/DisclaimerScreen';
 import { OnboardingFlow } from './pages/Onboarding/OnboardingFlow';
 import { SignupScreen } from './pages/Auth/SignupScreen';
@@ -14,6 +16,7 @@ import { LabelReviewScreen } from './pages/LabelReview/LabelReviewScreen';
 import { ResultScreen } from './pages/Result/ResultScreen';
 import { HistoryScreen } from './pages/History/HistoryScreen';
 import { ProfileScreen } from './pages/Profile/ProfileScreen';
+import { BasketScreen } from './pages/Basket/BasketScreen';
 import { SettingsScreen } from './pages/Settings/SettingsScreen';
 import { NutriSidebar, NutriPage } from './components/layout/NutriSidebar';
 import { NutriTopbar } from './components/layout/NutriTopbar';
@@ -204,6 +207,7 @@ const MainAppController: React.FC = () => {
           onOpenMobileNav={() => setMobileNavOpen(true)}
           onOpenSettings={() => navigateTo('settings')}
           onOpenProfile={() => navigateTo('profile')}
+          onOpenBasket={() => navigateTo('basket')}
         />
 
         <main className="page-content">
@@ -227,6 +231,7 @@ const MainAppController: React.FC = () => {
                     setCurrentResultRecord(null);
                     setCurrentPage('history');
                   }}
+                  onOpenBasket={() => navigateTo('basket')}
                 />
               </motion.div>
             ) : currentPage === 'home' ? (
@@ -241,6 +246,7 @@ const MainAppController: React.FC = () => {
                   onStartScan={() => navigateTo('scan')}
                   onOpenHistory={() => navigateTo('history')}
                   onOpenProfile={() => navigateTo('profile')}
+                  onOpenBasket={() => navigateTo('basket')}
                   onSelectScan={(record) => setCurrentResultRecord(record)}
                 />
               </motion.div>
@@ -281,6 +287,18 @@ const MainAppController: React.FC = () => {
               >
                 <ProfileScreen />
               </motion.div>
+            ) : currentPage === 'basket' ? (
+              <motion.div
+                key="basket"
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <BasketScreen
+                  onStartScan={() => navigateTo('scan')}
+                />
+              </motion.div>
             ) : currentPage === 'settings' ? (
               <motion.div
                 key="settings"
@@ -315,7 +333,11 @@ export default function App() {
     <AuthProvider>
       <ProfileProvider>
         <HistoryProvider>
-          <MainAppController />
+          <FavouritesProvider>
+            <BasketProvider>
+              <MainAppController />
+            </BasketProvider>
+          </FavouritesProvider>
         </HistoryProvider>
       </ProfileProvider>
     </AuthProvider>

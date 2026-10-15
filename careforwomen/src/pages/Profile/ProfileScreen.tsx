@@ -26,6 +26,8 @@ export const ProfileScreen: React.FC = () => {
   const [lactoseIntolerant, setLactoseIntolerant] = useState<boolean>(profile?.lactoseIntolerant || false);
   const [allergies, setAllergies] = useState<Allergen[]>(profile?.allergies || []);
   const [customAllergies, setCustomAllergies] = useState<string[]>(profile?.customAllergies || []);
+  const [dietaryPreference, setDietaryPreference] = useState<'all' | 'vegetarian' | 'vegan' | 'pescatarian'>(profile?.dietaryPreference || 'all');
+  const [budgetPreference, setBudgetPreference] = useState<'all' | 'budget' | 'moderate'>(profile?.budgetPreference || 'all');
   const [customInput, setCustomInput] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -81,6 +83,8 @@ export const ProfileScreen: React.FC = () => {
       lactoseIntolerant,
       allergies,
       customAllergies,
+      dietaryPreference,
+      budgetPreference,
     });
 
     setIsSaving(false);
@@ -349,6 +353,95 @@ export const ProfileScreen: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Dietary & Budget Preferences for Smart Alternatives */}
+      <div className="profile-section">
+        <div className="section-kicker">Dietary & Budget Preferences</div>
+        <p className="section-subtitle mb-4">
+          Personalize Smart Food Alternatives recommendations to match your dietary lifestyle and target grocery budget.
+        </p>
+
+        <div className="text-xs font-bold text-plum/70 mb-2">Dietary Lifestyle</div>
+        <div className="choice-grid choice-grid-small mb-6">
+          {[
+            { id: 'all', label: 'Omnivore / All Foods', desc: 'No dietary restrictions on alternatives' },
+            { id: 'vegetarian', label: '🌱 Vegetarian', desc: 'Plant-based with dairy & eggs' },
+            { id: 'vegan', label: '🌿 100% Vegan', desc: 'Strictly plant-based ingredients only' },
+            { id: 'pescatarian', label: '🐟 Pescatarian', desc: 'Plant-based plus seafood' },
+          ].map((d) => {
+            const isSelected = dietaryPreference === d.id;
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => setDietaryPreference(d.id as any)}
+                className={`choice-card ${isSelected ? 'choice-selected' : ''}`}
+              >
+                <div className="choice-check">
+                  {isSelected && <Check />}
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-plum">{d.label}</div>
+                  <div className="mt-1 text-[11px] text-plum/50">{d.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="text-xs font-bold text-plum/70 mb-2">Target Grocery Budget</div>
+        <div className="choice-grid choice-grid-small">
+          {[
+            { id: 'all', label: 'Any Budget', desc: 'Show all matching alternatives' },
+            { id: 'budget', label: '💵 Budget Friendly ($)', desc: 'Prioritize low-cost alternatives' },
+            { id: 'moderate', label: '💳 Moderate ($$)', desc: 'Balanced price to quality ratio' },
+          ].map((b) => {
+            const isSelected = budgetPreference === b.id;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => setBudgetPreference(b.id as any)}
+                className={`choice-card ${isSelected ? 'choice-selected' : ''}`}
+              >
+                <div className="choice-check">
+                  {isSelected && <Check />}
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-plum">{b.label}</div>
+                  <div className="mt-1 text-[11px] text-plum/50">{b.desc}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Save Button (Bottom Action) */}
+      <div className="mb-8">
+        <NutriButton
+          onClick={handleSave}
+          disabled={isSaving}
+          className="scan-button w-full justify-center"
+        >
+          {isSaving ? (
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="size-4 animate-spin" />
+              <span>Saving changes…</span>
+            </span>
+          ) : saved ? (
+            <span className="flex items-center gap-1.5">
+              <Check className="size-4 text-white" />
+              <span>Changes Saved!</span>
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="size-4" />
+              <span>Save Profile Changes</span>
+            </span>
+          )}
+        </NutriButton>
       </div>
 
       {/* Account & Session Section */}
