@@ -186,8 +186,16 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
     const clean = barcode.trim();
     if (!clean) return;
 
+    // Detect if user scanned a marketing/recipe QR code URL instead of a barcode
+    if (clean.startsWith('http://') || clean.startsWith('https://') || clean.includes('www.') || clean.includes('.com') || clean.includes('.in') || clean.includes('.org')) {
+      setErrorMsg(
+        'The scanner detected a website/recipe QR code link instead of a product barcode. Food packages often have marketing QR codes (like "Scan for recipes"). Please aim your camera at the rectangular barcode with numbers underneath, or use "Label Photo OCR" to photograph the Nutrition Facts table.'
+      );
+      return;
+    }
+
     setLoading(true);
-    setLoadingMessage(`Looking up barcode "${clean}" in Open Food Facts database…`);
+    setLoadingMessage(`Looking up barcode "${clean}" in product database…`);
     setErrorMsg(null);
 
     const res = await fetchProductByBarcode(clean);
@@ -328,6 +336,7 @@ export const ScanScreen: React.FC<ScanScreenProps> = ({
                 <div className="text-[11px] font-semibold text-plum/50 mb-2">Popular test barcodes:</div>
                 <div className="flex flex-wrap gap-2">
                   {[
+                    { code: '8901491103860', label: '🌾 Quaker Oats' },
                     { code: '3017620422003', label: 'Nutella Spread' },
                     { code: '7622210449283', label: 'Oreo Cookies' },
                     { code: '5449000000996', label: 'Coca-Cola' },

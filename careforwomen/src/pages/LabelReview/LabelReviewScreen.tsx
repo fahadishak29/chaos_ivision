@@ -104,7 +104,9 @@ export const LabelReviewScreen: React.FC<LabelReviewScreenProps> = ({
           Check These Values
         </h2>
         <p className="body-md" style={{ color: 'var(--text-secondary)' }}>
-          Gemini Vision extracted the details below. Review and adjust any values before running your personalized safety verdict.
+          {initialData.name === 'Extracted Packaged Product'
+            ? 'Demo Mode: Because no Gemini Vision API key is configured in .env, template placeholder values are shown below. Adjust them to match your physical packaging label before continuing.'
+            : 'Gemini Vision extracted the details below. Review and adjust any values before running your personalized safety verdict.'}
         </p>
       </div>
 

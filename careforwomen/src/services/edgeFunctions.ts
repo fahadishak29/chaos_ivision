@@ -124,6 +124,87 @@ export async function extractLabelFromImage(
     }
   }
 
+  // Direct client-side Gemini Vision OCR if VITE_GEMINI_API_KEY is configured in .env
+  const directGeminiKey = (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
+  if (directGeminiKey && !directGeminiKey.includes('placeholder')) {
+    try {
+      const prompt = `You are a specialized food nutrition label reader.
+Extract the nutrition facts and ingredient list from this packaged food photo.
+You MUST output valid, raw JSON matching this schema exactly:
+{
+  "productName": "string or empty if unreadable",
+  "servingSize": "string e.g. 30g or 250ml",
+  "servingUnit": "per100g",
+  "nutrients": {
+    "energy_kcal": number or null,
+    "sugar_g": number or null,
+    "added_sugar_g": number or null,
+    "saturated_fat_g": number or null,
+    "total_fat_g": number or null,
+    "trans_fat_g": number or null,
+    "sodium_mg": number or null,
+    "carbs_g": number or null,
+    "fiber_g": number or null,
+    "protein_g": number or null
+  },
+  "ingredients": ["array", "of", "individual", "ingredients"],
+  "ingredientsRaw": "full raw text string of ingredients",
+  "confidence": number between 0.1 and 1.0
+}
+Do NOT include markdown formatting or backticks. Return JSON only.`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${directGeminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: prompt },
+                  {
+                    inline_data: {
+                      mime_type: mimeType || 'image/jpeg',
+                      data: imageBase64,
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const json = await response.json();
+        const candidate = json?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (candidate) {
+          const cleaned = candidate.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleaned);
+          return {
+            data: {
+              name: parsed.productName || 'Scanned Packaged Item',
+              servingSize: parsed.servingSize,
+              servingUnit: parsed.servingUnit || 'per100g',
+              nutrients: parsed.nutrients || {},
+              ingredients: parsed.ingredients || [],
+              ingredientsRaw: parsed.ingredientsRaw || '',
+              source: 'ocr',
+              allergenTags: [],
+              tracesTags: [],
+              additives: [],
+            },
+            confidence: parsed.confidence || 0.95,
+            source: 'edge_function',
+          };
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
   // High-fidelity mock label parser for local demo & offline testing
   return {
     data: {
