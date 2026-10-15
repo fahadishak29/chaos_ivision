@@ -3,6 +3,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ProfileProvider, useProfile } from './context/ProfileContext';
 import { HistoryProvider, useHistory } from './context/HistoryContext';
+import { FavouritesProvider } from './context/FavouritesContext';
+import { BasketProvider } from './context/BasketContext';
 import { DisclaimerScreen } from './pages/Disclaimer/DisclaimerScreen';
 import { OnboardingFlow } from './pages/Onboarding/OnboardingFlow';
 import { SignupScreen } from './pages/Auth/SignupScreen';
@@ -13,6 +15,7 @@ import { LabelReviewScreen } from './pages/LabelReview/LabelReviewScreen';
 import { ResultScreen } from './pages/Result/ResultScreen';
 import { HistoryScreen } from './pages/History/HistoryScreen';
 import { ProfileScreen } from './pages/Profile/ProfileScreen';
+import { BasketScreen } from './pages/Basket/BasketScreen';
 import { BottomNav, TabType } from './components/ui/BottomNav/BottomNav';
 import { ScanRecord } from './types/scan';
 import { Product } from './types/product';
@@ -199,6 +202,10 @@ const MainAppController: React.FC = () => {
         onBack={() => {
           setCurrentResultRecord(null);
         }}
+        onOpenBasket={() => {
+          setCurrentResultRecord(null);
+          setActiveTab('basket');
+        }}
       />
     );
   }
@@ -220,6 +227,7 @@ const MainAppController: React.FC = () => {
                 onStartScan={() => setActiveTab('scan')}
                 onOpenHistory={() => setActiveTab('history')}
                 onOpenProfile={() => setActiveTab('profile')}
+                onOpenBasket={() => setActiveTab('basket')}
                 onSelectScan={(record) => setCurrentResultRecord(record)}
               />
             </motion.div>
@@ -266,6 +274,20 @@ const MainAppController: React.FC = () => {
               <ProfileScreen />
             </motion.div>
           )}
+
+          {activeTab === 'basket' && (
+            <motion.div
+              key="basket"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <BasketScreen
+                onStartScan={() => setActiveTab('scan')}
+              />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 
@@ -287,7 +309,11 @@ export default function App() {
     <AuthProvider>
       <ProfileProvider>
         <HistoryProvider>
-          <MainAppController />
+          <FavouritesProvider>
+            <BasketProvider>
+              <MainAppController />
+            </BasketProvider>
+          </FavouritesProvider>
         </HistoryProvider>
       </ProfileProvider>
     </AuthProvider>

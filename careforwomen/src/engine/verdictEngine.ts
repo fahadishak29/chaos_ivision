@@ -55,7 +55,7 @@ export function runVerdictEngine(
   }
 
   // 3. Life Stages Evaluation
-  if (profile.lifeStages.includes('pcos')) {
+  if (profile.lifeStages?.includes('pcos')) {
     const { results, avoidIngredients } = evaluatePCOS(product);
     allRuleResults.push(...results);
     avoidIngredients.forEach((item) => avoidIngredientsSet.add(item));
@@ -68,7 +68,7 @@ export function runVerdictEngine(
     }
   }
 
-  if (profile.lifeStages.includes('pregnancy')) {
+  if (profile.lifeStages?.includes('pregnancy')) {
     const { results, softWarnings } = evaluatePregnancy(product);
     allRuleResults.push(...results);
     softWarnings.forEach((w) => softWarningsList.push(w));
@@ -79,7 +79,7 @@ export function runVerdictEngine(
     if (redMercury) consequencesList.push('Methylmercury bioaccumulation poses severe danger to fetal neurological development.');
   }
 
-  if (profile.lifeStages.includes('breastfeeding')) {
+  if (profile.lifeStages?.includes('breastfeeding')) {
     const { results, avoidIngredients } = evaluateBreastfeeding(product);
     allRuleResults.push(...results);
     avoidIngredients.forEach((item) => avoidIngredientsSet.add(item));

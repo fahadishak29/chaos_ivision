@@ -199,6 +199,8 @@ export async function fetchProfile(userId: string): Promise<HealthProfile | null
           lactoseIntolerant: Boolean(data.lactose_intolerant),
           allergies: data.allergies || [],
           customAllergies: data.custom_allergies || [],
+          dietaryPreference: data.dietary_preference || 'all',
+          budgetPreference: data.budget_preference || 'all',
           consentGiven: Boolean(data.consent_given),
           createdAt: data.created_at,
           updatedAt: data.updated_at,

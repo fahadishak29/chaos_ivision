@@ -1,17 +1,19 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Scan, Sparkles, ArrowRight, ShieldCheck, History, Edit3 } from 'lucide-react';
+import { Scan, Sparkles, ArrowRight, ShieldCheck, History, Edit3, ShoppingBag } from 'lucide-react';
 import { Button } from '../../components/ui/Button/Button';
 import { GlassCard } from '../../components/ui/Card/GlassCard';
 import { VerdictBadge } from '../../components/ui/VerdictBadge/VerdictBadge';
 import { useProfile } from '../../context/ProfileContext';
 import { useHistory } from '../../context/HistoryContext';
+import { useBasket } from '../../context/BasketContext';
 import { ScanRecord } from '../../types/scan';
 
 export interface HomeScreenProps {
   onStartScan: () => void;
   onOpenHistory: () => void;
   onOpenProfile: () => void;
+  onOpenBasket?: () => void;
   onSelectScan: (scan: ScanRecord) => void;
 }
 
@@ -19,10 +21,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onStartScan,
   onOpenHistory,
   onOpenProfile,
+  onOpenBasket,
   onSelectScan,
 }) => {
   const { profile } = useProfile();
   const { scans } = useHistory();
+  const { totalItemsCount, uniqueProductsCount } = useBasket();
 
   const recentScans = scans.slice(0, 3);
   const name = profile?.displayName || 'Friend';
@@ -68,24 +72,73 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </h1>
         </div>
 
-        <button
-          type="button"
-          onClick={onOpenProfile}
-          title="Edit Profile"
-          style={{
-            width: '42px',
-            height: '42px',
-            borderRadius: '50%',
-            background: 'var(--glass-bg)',
-            border: '1px solid var(--glass-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--accent-lavender)',
-          }}
-        >
-          <Edit3 size={18} />
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {onOpenBasket && (
+            <button
+              type="button"
+              onClick={onOpenBasket}
+              title="Open Smart Basket"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                background: 'var(--glass-bg)',
+                border: '1px solid var(--glass-border)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: totalItemsCount > 0 ? 'var(--accent-rose)' : 'var(--accent-lavender)',
+                cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
+              <ShoppingBag size={18} />
+              {totalItemsCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '-3px',
+                    right: '-3px',
+                    background: 'var(--accent-rose)',
+                    color: '#120815',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    borderRadius: 'var(--radius-full)',
+                    minWidth: '16px',
+                    height: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '0 3px',
+                    boxShadow: '0 0 8px var(--accent-rose-glow)',
+                  }}
+                >
+                  {totalItemsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            title="Edit Profile"
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '50%',
+              background: 'var(--glass-bg)',
+              border: '1px solid var(--glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--accent-lavender)',
+              cursor: 'pointer',
+            }}
+          >
+            <Edit3 size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Active Health Profile Pill Chips */}
@@ -151,6 +204,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </Button>
         </div>
       </GlassCard>
+
+      {/* Smart Basket Quick Card (Shown when basket has items) */}
+      {totalItemsCount > 0 && onOpenBasket && (
+        <GlassCard
+          variant="interactive"
+          padding="md"
+          onClick={onOpenBasket}
+          style={{
+            marginBottom: '24px',
+            border: '1px solid rgba(232, 143, 167, 0.3)',
+            background: 'linear-gradient(135deg, rgba(232, 143, 167, 0.08) 0%, rgba(196, 181, 253, 0.05) 100%)',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #e88fa7 0%, #c4b5fd 100%)',
+                  color: '#120815',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <ShoppingBag size={20} />
+              </div>
+              <div>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  Smart Grocery Basket ({totalItemsCount} units)
+                </h4>
+                <div className="caption" style={{ color: 'var(--accent-rose)' }}>
+                  {uniqueProductsCount} unique items analyzed against your profile
+                </div>
+              </div>
+            </div>
+
+            <ArrowRight size={18} color="var(--accent-rose)" />
+          </div>
+        </GlassCard>
+      )}
 
       {/* Recent Scans Section */}
       <div style={{ marginBottom: '24px' }}>

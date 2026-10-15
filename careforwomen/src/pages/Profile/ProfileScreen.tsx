@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { User, Shield, Trash2, LogOut, Check, Plus, X, Lock, KeyRound } from 'lucide-react';
+import { User, Trash2, LogOut, Check, Plus, X } from 'lucide-react';
 import { Button } from '../../components/ui/Button/Button';
 import { GlassCard } from '../../components/ui/Card/GlassCard';
 import { Chip } from '../../components/ui/Chip/Chip';
@@ -19,6 +18,8 @@ export const ProfileScreen: React.FC = () => {
   const [lactoseIntolerant, setLactoseIntolerant] = useState<boolean>(profile?.lactoseIntolerant || false);
   const [allergies, setAllergies] = useState<Allergen[]>(profile?.allergies || []);
   const [customAllergies, setCustomAllergies] = useState<string[]>(profile?.customAllergies || []);
+  const [dietaryPreference, setDietaryPreference] = useState<'all' | 'vegetarian' | 'vegan' | 'pescatarian'>(profile?.dietaryPreference || 'all');
+  const [budgetPreference, setBudgetPreference] = useState<'all' | 'budget' | 'moderate'>(profile?.budgetPreference || 'all');
   const [customInput, setCustomInput] = useState('');
 
   const [isSaving, setIsSaving] = useState(false);
@@ -74,6 +75,8 @@ export const ProfileScreen: React.FC = () => {
       lactoseIntolerant,
       allergies,
       customAllergies,
+      dietaryPreference,
+      budgetPreference,
     });
 
     setIsSaving(false);
@@ -312,6 +315,49 @@ export const ProfileScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+        {/* Section: Dietary Preference for Alternatives */}
+        <div style={{ marginBottom: '22px' }}>
+          <h3 className="title-md" style={{ marginBottom: '10px' }}>
+            Dietary Preference for Alternatives
+          </h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {[
+              { id: 'all', label: 'Omnivore / All Foods' },
+              { id: 'vegetarian', label: '🌱 Vegetarian' },
+              { id: 'vegan', label: '🌿 100% Vegan' },
+              { id: 'pescatarian', label: '🐟 Pescatarian' },
+            ].map((d) => (
+              <Chip
+                key={d.id}
+                label={d.label}
+                selected={dietaryPreference === d.id}
+                onClick={() => setDietaryPreference(d.id as any)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Section: Preferred Budget */}
+        <div style={{ marginBottom: '22px' }}>
+          <h3 className="title-md" style={{ marginBottom: '10px' }}>
+            Preferred Budget for Alternatives
+          </h3>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[
+              { id: 'all', label: 'Any Budget' },
+              { id: 'budget', label: '💵 Budget Friendly ($)' },
+              { id: 'moderate', label: '💳 Moderate ($$)' },
+            ].map((b) => (
+              <Chip
+                key={b.id}
+                label={b.label}
+                selected={budgetPreference === b.id}
+                onClick={() => setBudgetPreference(b.id as any)}
+              />
+            ))}
+          </div>
+        </div>
 
       {/* Save Button */}
       <div style={{ marginBottom: '32px' }}>
