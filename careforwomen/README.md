@@ -1,475 +1,158 @@
-# 🌸 SHE Scan — Baddiez
+# 🥗 NutriLens — See Beyond the Label
 
-> **Scan it. Understand it. Make it personal.**
+> **Understand your food. Compare your options. Shop with confidence.**
 
-**SHE Scan** is a personalized food-scanning and health-safety companion that helps users understand how packaged food products fit their individual health and dietary needs.
+NutriLens is an intelligent food-label analysis and grocery decision-support platform that helps consumers make more informed decisions when purchasing packaged food products.
 
-Instead of giving everyone the same generic nutrition score, SHE Scan evaluates products against the user's personalized profile — including conditions such as **PCOS/PCOD, diabetes, pregnancy, breastfeeding, lactose intolerance, and food allergies**.
+Food packages often use attractive marketing claims, but understanding the actual nutritional composition of a product can be difficult. Consumers must interpret ingredient lists, nutritional values, allergens, and serving sizes while comparing multiple products.
 
-### The core idea
+**NutriLens bridges the gap between reading a food label and making an informed purchasing decision.**
 
-> **Rules decide. AI explains.**
+Our platform helps users explore product information, understand potential nutritional concerns, compare alternatives, and evaluate their grocery basket through a unified experience.
 
-A deterministic rule engine evaluates the product and generates the verdict. AI is then used only to turn that result into a simple, human-readable explanation.
+---
+
+## 🎯 The Problem
+
+Consumers frequently face challenges when purchasing packaged food:
+
+- **Complex nutrition labels:** Ingredient lists and nutritional values can be difficult to understand.
+- **Misleading impressions:** Attractive packaging and marketing claims may distract consumers from the actual product information.
+- **Different dietary needs:** A product that suits one person may not suit another's preferences or dietary requirements.
+- **Difficult product comparisons:** Comparing nutritional information across multiple products takes time.
+- **Limited basket-level insights:** Evaluating products individually does not necessarily reveal the nutritional characteristics of an entire grocery basket.
+
+The problem is not simply a lack of nutritional information. It is the difficulty of turning that information into practical purchasing decisions.
+
+## 💡 Our Solution
+
+NutriLens provides a connected workflow for understanding packaged foods and making more informed grocery-shopping decisions.
+
+### Our approach
+
+1. **Discover:** Scan or search for a packaged food product.
+2. **Understand:** Review available ingredients and nutritional information.
+3. **Assess:** Identify potential nutritional concerns using the available product data.
+4. **Compare:** Explore alternative products when suitable information is available.
+5. **Optimise:** Review multiple products through Smart Grocery Basket.
+6. **Decide:** Use the available information to make a more informed purchasing choice.
+
+Our goal is to help users look beyond packaging claims and understand the information that matters when choosing what to buy.
 
 ---
 
 ## ✨ Features
 
-### 👤 Personalized Profile
+### 📷 1. Product Scanning and Lookup
 
-Users can create a profile based on:
+NutriLens provides a product-discovery workflow using barcode scanning and product lookup.
 
-* PCOS / PCOD
-* Pregnancy
-* Breastfeeding
-* Diabetes
-* Lactose intolerance
-* Food allergies
-* Dietary preferences
+Using the Open Food Facts API, the application can retrieve available information such as:
 
-These preferences are used to personalize every product analysis.
+- Product name and brand
+- Ingredients
+- Nutritional values
+- Allergen information
+- Other available product details
 
-### 📷 Smart Product Scanning
+Product information depends on database coverage and the completeness of the returned data.
 
-Scan a product barcode directly through the web app.
+### 📝 2. Food Label Image Processing
 
-SHE Scan retrieves available product information such as:
+When barcode lookup is insufficient, NutriLens provides a workflow for working with product-label images.
 
-* Product name
-* Brand
-* Ingredients
-* Nutritional values
-* Allergen information
+The label extraction workflow is intended to help obtain information from nutritional and ingredient labels.
 
-using the **Open Food Facts API**.
+Extracted information may contain errors, so users should verify important values against the physical packaging.
 
-### 📝 Label OCR Fallback
+### 🧠 3. Nutritional Assessment
 
-Can't find the barcode?
+NutriLens organises available product information into an assessment designed to make potential concerns easier to understand.
 
-Users can upload a photo of the product's nutrition or ingredient label. OCR extracts the available information and sends it through the same analysis pipeline.
+The assessment can consider available information about:
 
-### 🧠 Rule-Based Analysis
+- Sugar
+- Carbohydrates
+- Sodium
+- Saturated fat
+- Ingredients
+- Allergens
+- Other available nutritional information
 
-The product is evaluated against the user's profile using deterministic rules.
+The usefulness of an assessment depends on the information available for the product.
 
-The engine considers factors such as:
+Missing nutritional values should not be interpreted as zero or as proof that a product has no nutritional concerns.
 
-* Sugar
-* Carbohydrates
-* Sodium
-* Saturated fat
-* Ingredients
-* Dairy/lactose indicators
-* Allergens
-* Profile-specific nutritional concerns
+### 🔍 4. Product Alternatives
 
-The result is classified as:
+Finding a product is only the first step. Consumers may also want to explore other options.
 
-🟢 **Suitable**
-🟡 **Caution**
-🔴 **Avoid**
+NutriLens provides an alternatives workflow that helps users investigate potential substitutes when suitable product information is available.
 
-### ⚠️ Allergen Override
+The objective is to make product comparison easier and help users consider alternatives that may better suit their needs.
 
-Allergen detection has the highest priority.
+### 🛒 5. Smart Grocery Basket
 
-If a product contains an allergen selected in the user's profile, SHE Scan displays a prominent allergen warning before the normal nutritional verdict.
+**Smart Grocery Basket extends food analysis beyond individual products.**
 
-### 🤖 AI-Powered Explanation
+Users can collect multiple products in a grocery basket and review their selections together.
 
-The AI does **not** decide whether a product is suitable.
+The workflow is designed to help users:
 
-Instead:
+- Organise multiple selected products
+- Review potential nutritional concerns across their basket
+- Identify products that may deserve closer attention
+- Explore possible substitutions
+- Compare basket options when supported by available product data
+
+Instead of considering every product in isolation, NutriLens helps users think about their overall grocery-shopping decisions.
+
+### 👤 6. User Accounts and Data Persistence
+
+NutriLens integrates Supabase for authentication and database-backed functionality when configured.
+
+The application also supports local storage for applicable local and fallback experiences.
+
+---
+
+## 🏗️ How NutriLens Works
 
 ```text
-Product Data
-     ↓
-Rule Engine
-     ↓
-Verdict + Triggered Rules
-     ↓
-AI Explanation
-     ↓
-Simple Human-Readable Result
-```
-
-This keeps the core decision-making deterministic while making the result easier to understand.
-
-### 📊 Product Results
-
-Each analysis can show:
-
-* Overall verdict
-* Nutrient amounts vs. relevant limits
-* Ingredients of concern
-* Allergen warnings
-* Explanation of the result
-* Potential concerns
-* Healthier alternatives when appropriate
-
-### 📚 Scan History
-
-Previous product analyses can be saved and revisited, allowing users to keep track of what they've scanned.
-
----
-
-# 🏗️ Architecture
-
-SHE Scan follows a simple pipeline:
-
-```text
-┌──────────────────┐
-│   User Profile   │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│ Barcode / OCR    │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│  Product Data    │
-│ Open Food Facts  │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│  Rule Engine     │
-│                  │
-│ Nutrients        │
-│ Ingredients      │
-│ Allergens        │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│     Verdict      │
-│ 🟢 🟡 🔴         │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│ AI Explanation   │
-└────────┬─────────┘
-         ↓
-┌──────────────────┐
-│   Result Screen  │
-└──────────────────┘
-```
-
----
-
-# 🛠️ Tech Stack
-
-| Layer             | Technology                       |
-| ----------------- | -------------------------------- |
-| Frontend          | React 19                         |
-| Language          | TypeScript                       |
-| Build Tool        | Vite                             |
-| Styling           | CSS                              |
-| Animation         | Framer Motion                    |
-| Icons             | Lucide React                     |
-| Authentication    | Supabase Auth                    |
-| Database          | Supabase PostgreSQL              |
-| Data Source       | Open Food Facts API              |
-| Barcode Detection | Barcode Detector API             |
-| Persistence       | Supabase + localStorage fallback |
-
----
-
-# 📁 Project Structure
-
-```text
-baddiez/
-│
-├── src/
-│   ├── components/
-│   ├── pages/
-│   ├── hooks/
-│   ├── services/
-│   ├── lib/
-│   │   ├── rules/
-│   │   ├── products/
-│   │   └── ai/
-│   └── data/
-│
-├── supabase/
-│   └── migrations/
-│       └── 001_create_schema.sql
-│
-├── public/
-│
-├── .env.example
-├── package.json
-├── vite.config.ts
-└── README.md
-```
-
----
-
-# 🚀 Getting Started
-
-## 1. Clone the repository
-
-```bash
-git clone <repository-url>
-cd baddiez
-```
-
-## 2. Install dependencies
-
-```bash
-npm install
-```
-
-## 3. Configure environment variables
-
-SHE Scan uses Supabase for authentication and database persistence.
-
-Copy the example environment file:
-
-```bash
-cp .env.example .env
-```
-
-Then add your Supabase project credentials:
-
-```env
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-```
-
-> **Important:** Never commit your `.env` file or expose private API keys in the frontend.
-
-### Offline fallback
-
-If Supabase is not configured or contains placeholder values, SHE Scan automatically falls back to **localStorage**.
-
-This allows the application to remain usable for local development and demonstrations without requiring a configured backend.
-
----
-
-# 🗄️ Database Setup
-
-SHE Scan uses Supabase to persist:
-
-* User profiles
-* Scan history
-* Cached product information
-
-### Setup
-
-1. Open your **Supabase Dashboard**.
-2. Select your project.
-3. Open **SQL Editor**.
-4. Run:
-
-```text
-supabase/migrations/001_create_schema.sql
-```
-
-The migration creates:
-
-```text
-profiles
-scans
-products_cache
-```
-
-along with the required **Row Level Security (RLS)** policies.
-
----
-
-# ▶️ Run Locally
-
-Start the Vite development server:
-
-```bash
-npm run dev
-```
-
-Then open the local URL provided by Vite, typically:
-
-```text
-http://localhost:5173
-```
-
----
-
-# 🔄 User Flow
-
-```text
-Sign Up
-   ↓
-Personalized Onboarding
-   ↓
-Home Dashboard
-   ↓
-Scan Product
-   ↓
-Open Food Facts
-   │
-   ├── Product Found
-   │
-   └── Not Found
-          ↓
-       Label OCR
-          ↓
-    Product Normalization
-          ↓
-      Rule Engine
-          ↓
-     Allergen Check
-          ↓
-        Verdict
-          ↓
-     AI Explanation
-          ↓
-      Result Screen
-          ↓
-      Scan History
-```
-
----
-
-# 🔐 Data & Privacy
-
-SHE Scan uses Supabase authentication and Row Level Security to help keep user-specific data separated.
-
-The application is designed around the principle of collecting only the information required to personalize product analysis.
-
-For local development without Supabase, profile and scan data can be stored locally using `localStorage`.
-
-> SHE Scan is a prototype and does not provide medical diagnosis or medical advice.
-
----
-
-# ⚠️ Important Safety Principle
-
-SHE Scan separates **decision-making** from **language generation**.
-
-The AI layer cannot:
-
-* Override a verdict
-* Invent nutritional values
-* Invent ingredients
-* Create new health rules
-* Diagnose medical conditions
-* Determine allergen presence independently
-
-The deterministic rule engine remains the source of truth.
-
-```text
-             ┌───────────────┐
-             │  Product Data  │
-             └───────┬───────┘
-                     ↓
-             ┌───────────────┐
-             │  Rule Engine  │
-             └───────┬───────┘
-                     ↓
-              SOURCE OF TRUTH
-                     │
-              ┌──────┴──────┐
-              ↓             ↓
-          Verdict       Triggered Rules
-                            │
-                            ↓
-                       AI Explanation
-```
-
----
-
-# 🎨 Design Philosophy
-
-SHE Scan uses a **soft, editorial health-tech aesthetic** designed to feel calm, trustworthy, and approachable.
-
-The interface uses:
-
-* Warm whites
-* Blush and rose accents
-* Berry primary actions
-* Clear green / amber / red verdict states
-* Generous whitespace
-* Accessible typography
-* Subtle motion
-* Responsive layouts
-
-The design intentionally avoids:
-
-* Neon colors
-* Excessive gradients
-* Glassmorphism
-* Heavy shadows
-* Overly clinical interfaces
-* Excessive animations
-* Generic dashboard aesthetics
-
----
-
-# 📱 Responsive Experience
-
-SHE Scan is designed for both mobile and desktop.
-
-### Mobile
-
-* Bottom navigation
-* Thumb-friendly controls
-* Large scan action
-* Single-column result layout
-* Mobile camera experience
-
-### Desktop
-
-* Sidebar navigation
-* Expanded product analysis
-* Multi-column layouts
-* Larger result cards
-
----
-
-# 🧪 Demo & Fallback Data
-
-The application includes fallback/mock product data so the core experience can still be demonstrated when external services are unavailable.
-
-Demo scenarios include:
-
-* 🟢 Suitable product
-* 🟡 High-sugar / caution product
-* 🔴 Product with significant nutritional concerns
-* ⚠️ Allergen conflict
-* 🥛 Dairy-containing product
-
-This ensures the main:
-
-**Profile → Scan → Analyze → Explain → Result**
-
-flow remains demoable without relying entirely on external APIs.
-
----
-
-# 🔮 Future Scope
-
-Potential future improvements include:
-
-* More medically reviewed rule sets
-* Expanded product databases
-* Better multilingual OCR
-* Personalized product recommendations
-* Smarter ingredient synonym matching
-* Nutritionist-reviewed recommendations
-* Advanced scan history and trends
-* Native mobile applications
-* Wearable/device integrations
-
----
-
-# 👩‍💻 Built By Baddiez
-
-**SHE Scan** was created as a technology prototype focused on making packaged-food information more understandable and personalized.
-
-> **Don't just scan the label. Understand what it means for you.**
-
----
-
-## ⚠️ Disclaimer
-
-SHE Scan is a prototype for informational and demonstration purposes. Its rules, thresholds, recommendations, and AI-generated explanations should not be treated as medical advice, diagnosis, or a substitute for consultation with a qualified healthcare professional.
+          USER
+            |
+            v
+   SCAN OR SEARCH PRODUCT
+            |
+            v
+    PRODUCT DATA RETRIEVAL
+            |
+       +----+----+
+       |         |
+       v         v
+   BARCODE    LABEL IMAGE
+    LOOKUP    EXTRACTION
+       |         |
+       +----+----+
+            |
+            v
+   AVAILABLE PRODUCT DATA
+            |
+            v
+    PRODUCT ASSESSMENT
+            |
+       +----+----+
+       |         |
+       v         v
+ PRODUCT      PRODUCT
+ RESULTS     ALTERNATIVES
+       |         |
+       +----+----+
+            |
+            v
+    SMART GROCERY BASKET
+            |
+            v
+    REVIEW AND COMPARE
+            |
+            v
+   INFORMED FOOD CHOICES
