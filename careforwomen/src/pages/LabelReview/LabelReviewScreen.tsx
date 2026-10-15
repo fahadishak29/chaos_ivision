@@ -106,8 +106,43 @@ export const LabelReviewScreen: React.FC<LabelReviewScreenProps> = ({
         <p className="body-md" style={{ color: 'var(--text-secondary)' }}>
           {initialData.name === 'Extracted Packaged Product'
             ? 'Demo Mode: Because no Gemini Vision API key is configured in .env, template placeholder values are shown below. Adjust them to match your physical packaging label before continuing.'
-            : 'Gemini Vision extracted the details below. Review and adjust any values before running your personalized safety verdict.'}
+            : 'Review and adjust any values before running your personalized safety verdict.'}
         </p>
+
+        <div style={{ marginTop: '12px' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setName('Quaker Oats (100% Wholegrain Rolled Oats)');
+              setBrand('Quaker');
+              setServingSize('40g');
+              setServingUnit('per100g');
+              setSugar('0.5');
+              setAddedSugar('0');
+              setSatFat('1.5');
+              setSodium('6');
+              setCarbs('66.5');
+              setFiber('10.2');
+              setProtein('12.5');
+              setIngredientsText('Rolled Oats (100%)');
+            }}
+            style={{
+              fontSize: '12px',
+              fontWeight: 600,
+              padding: '6px 12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(116, 61, 105, 0.12)',
+              color: 'var(--primary)',
+              border: '1px solid rgba(116, 61, 105, 0.3)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <span>🌾 Load Quaker Oats Values (0g Added Sugar)</span>
+          </button>
+        </div>
       </div>
 
       <GlassCard padding="lg" style={{ marginBottom: '24px' }}>

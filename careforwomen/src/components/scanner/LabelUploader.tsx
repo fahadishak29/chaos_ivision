@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
+import { BarcodeDetector as BarcodeDetectorPolyfill } from 'barcode-detector';
 import { Upload, Camera, Sparkles, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/Button/Button';
 import { extractLabelFromImage } from '../../services/edgeFunctions';
+import { fetchProductByBarcode } from '../../services/openFoodFacts';
 import { Product } from '../../types/product';
 
 export interface LabelUploaderProps {
@@ -18,6 +20,39 @@ export const LabelUploader: React.FC<LabelUploaderProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const detectBarcodeInImage = async (img: HTMLImageElement): Promise<string | null> => {
+    try {
+      let detector: any;
+      try {
+        if ('BarcodeDetector' in window) {
+          detector = new (window as any).BarcodeDetector({
+            formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
+          });
+        }
+      } catch {}
+
+      if (!detector) {
+        detector = new BarcodeDetectorPolyfill({
+          formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128', 'qr_code'],
+        });
+      }
+
+      const detected = await detector.detect(img);
+      if (detected && detected.length > 0) {
+        for (const item of detected) {
+          const raw = item.rawValue?.trim();
+          if (raw && !raw.startsWith('http://') && !raw.startsWith('https://')) {
+            return raw;
+          }
+        }
+        return detected[0].rawValue?.trim() || null;
+      }
+    } catch {
+      // Barcode detection in image failed or not supported
+    }
+    return null;
+  };
+
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -30,7 +65,25 @@ export const LabelUploader: React.FC<LabelUploaderProps> = ({
       const objectUrl = URL.createObjectURL(file);
       setPreviewUrl(objectUrl);
 
-      // 2. Read as base64
+      // 2. Try to detect product barcode in the uploaded photo first
+      const img = new Image();
+      img.src = objectUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+
+      const detectedBarcode = await detectBarcodeInImage(img);
+      if (detectedBarcode) {
+        const productRes = await fetchProductByBarcode(detectedBarcode);
+        if (productRes.product) {
+          onExtracted(productRes.product);
+          setIsProcessing(false);
+          return;
+        }
+      }
+
+      // 3. If no barcode recognized, read image as base64 for OCR
       const reader = new FileReader();
       reader.onload = async () => {
         const resultString = reader.result as string;
